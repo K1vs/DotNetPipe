@@ -1,0 +1,43 @@
+﻿using System.Threading.Tasks;
+using BenchmarkDotNet.Attributes;
+using DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsComplexFast;
+
+namespace DotNetPipe.Benchmarks;
+
+[MemoryDiagnoser]
+public class WithoutMutatorsComplexFast
+{
+    private readonly NotVirtualClass _classHandler;
+
+    private readonly VirtualClass _virtualClassHandler = new();
+
+    private readonly DotNetPipePipeline _pipelineHandler;
+
+    public WithoutMutatorsComplexFast()
+    {
+        _classHandler = new NotVirtualClass();
+        _pipelineHandler = new DotNetPipePipeline();
+        _virtualClassHandler = new VirtualClass();
+    }
+
+    [Params(" 123.45 ", " 678 ", " 90.12 ", "24", "some random text")]
+    public string Input { get; set; }
+
+    [Benchmark]
+    public async ValueTask Pipeline()
+    {
+        await _pipelineHandler.Run(Input);
+    }
+
+    [Benchmark]
+    public async ValueTask Class()
+    {
+        await _classHandler.Run(Input);
+    }
+
+    [Benchmark]
+    public async ValueTask VirtualClass()
+    {
+        await _virtualClassHandler.Run(Input);
+    }
+}
