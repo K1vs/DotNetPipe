@@ -4,7 +4,7 @@ using K1vs.DotNetPipe.Universal;
 using System;
 using System.Threading.Tasks;
 
-namespace DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsComplexFast;
+namespace DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsIfElseFast;
 
 internal class DotNetPipePipeline
 {
@@ -20,7 +20,7 @@ internal class DotNetPipePipeline
 
     private Handler<string> CreateHandler()
     {
-        var pipeline = Pipelines.Create<string>("TestIfElseStepPipeline")
+        var pipeline = Pipelines.CreatePipeline<string>("TestIfElseStepPipeline")
             .StartWithLinear<string>("TrimString", async (input, next) =>
             {
                 var trimmed = input.Trim();

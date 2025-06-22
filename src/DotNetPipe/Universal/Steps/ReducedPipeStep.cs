@@ -21,7 +21,9 @@ public abstract class ReducedPipeStep<TRootStepInput, TNextInput>: Step
         {
             throw new InvalidOperationException("Entry step is not set");
         }
-        return new OpenPipeline<TRootStepInput, TNextInput>(Builder.Name, Builder.EntryStep, this);
+        var openPipeline = new OpenPipeline<TRootStepInput, TNextInput>(Builder.Name, Builder.EntryStep, this);
+        Builder.Space.AddPipeline(openPipeline);
+        return openPipeline;
     }
 
     public LinearStep<TRootStepInput, TNextInput, TNextStepNextInput> ThenLinear<TNextStepNextInput>(string name,

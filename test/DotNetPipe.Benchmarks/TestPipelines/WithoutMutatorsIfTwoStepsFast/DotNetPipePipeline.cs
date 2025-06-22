@@ -3,7 +3,7 @@ using K1vs.DotNetPipe;
 using K1vs.DotNetPipe.Universal;
 using System.Threading.Tasks;
 
-namespace DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsIfElseTwoStepsFast;
+namespace DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsIfTwoStepsFast;
 
 internal class DotNetPipePipeline
 {
@@ -18,7 +18,7 @@ internal class DotNetPipePipeline
 
     private Handler<int> CreateHandler()
     {
-        var pipeline = Pipelines.Create<int>("IfTwoStepPipeline")
+        var pipeline = Pipelines.CreatePipeline<int>("IfTwoStepPipeline")
             .StartWithIf<int, int>("CheckNegative", async (input, conditionalNext, next) =>
             {
                 if (input < 0)

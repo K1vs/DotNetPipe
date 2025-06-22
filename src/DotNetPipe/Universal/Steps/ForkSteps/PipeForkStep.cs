@@ -21,7 +21,9 @@ public sealed class PipeForkStep<TRootStepInput, TInput, TBranchAInput, TBranchB
         {
             throw new InvalidOperationException("Previous step is not set");
         }
-        return new Pipeline<TRootStepInput>(Builder.Name, PreviousStep, this, BuildHandler);
+        var pipeline = new Pipeline<TRootStepInput>(Builder.Name, PreviousStep, this, BuildHandler);
+        Builder.Space.AddPipeline(pipeline);
+        return pipeline;
     }
 
     internal override Handler<TRootStepInput> BuildHandler()

@@ -18,7 +18,7 @@ internal class DotNetPipePipeline
 
     private Handler<int> CreateHandler()
     {
-        var pipeline = Pipelines.Create<int>("TwoStepPipeline")
+        var pipeline = Pipelines.CreatePipeline<int>("TwoStepPipeline")
             .StartWithLinear<int>("AddConstant", async (input, next) =>
             {
                 var result = input + _constantToAdd;

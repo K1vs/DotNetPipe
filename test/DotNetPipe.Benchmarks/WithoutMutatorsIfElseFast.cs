@@ -1,11 +1,11 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsIfTwoStepsFast;
+using DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsIfElseFast;
 
 namespace DotNetPipe.Benchmarks;
 
 [MemoryDiagnoser]
-public class WithoutMutatorsIfTwoStepsFast
+public class WithoutMutatorsIfElseFast
 {
     private readonly NotVirtualClass _classHandler;
 
@@ -13,15 +13,15 @@ public class WithoutMutatorsIfTwoStepsFast
 
     private readonly DotNetPipePipeline _pipelineHandler;
 
-    public WithoutMutatorsIfTwoStepsFast()
+    public WithoutMutatorsIfElseFast()
     {
         _classHandler = new NotVirtualClass();
         _pipelineHandler = new DotNetPipePipeline();
         _virtualClassHandler = new VirtualClass();
     }
 
-    [Params(-25, 0, 100)]
-    public int Input { get; set; }
+    [Params(" 123.45 ", " 678 ", " 90.12 ", "24", "some random text")]
+    public string Input { get; set; }
 
     [Benchmark]
     public async ValueTask Pipeline()

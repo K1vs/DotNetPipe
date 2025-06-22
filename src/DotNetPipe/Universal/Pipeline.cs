@@ -2,7 +2,7 @@ using K1vs.DotNetPipe.Universal.Steps;
 
 namespace K1vs.DotNetPipe.Universal;
 
-public class Pipeline<TInput>
+public class Pipeline<TInput>: IPipeline
 {
     private readonly Func<Handler<TInput>> _buildHandler;
 
@@ -10,13 +10,17 @@ public class Pipeline<TInput>
 
     public Step EntryStep { get; }
 
-    public Step TerminatorStep { get; }
+    public Step HandlerStep { get; }
 
-    public Pipeline(string name, Step entryStep, Step terminatorStep, Func<Handler<TInput>> buildHandler)
+    public Step LastStep => HandlerStep;
+
+    public bool IsOpenPipeline => false;
+
+    public Pipeline(string name, Step entryStep, Step handlerStep, Func<Handler<TInput>> buildHandler)
     {
         Name = name;
         EntryStep = entryStep;
-        TerminatorStep = terminatorStep;
+        HandlerStep = handlerStep;
         _buildHandler = buildHandler;
     }
 

@@ -17,7 +17,7 @@ internal class DotNetPipePipeline
 
     private Handler<int> CreateHandler()
     {
-        var pipeline = Pipelines.Create<int>("SimpleOneStepPipeline")
+        var pipeline = Pipelines.CreatePipeline<int>("SimpleOneStepPipeline")
             .StartWithHandler("ConsumeNumber", async (input) => _consumer.Consume(input))
             .BuildPipeline().Compile();
         return pipeline;

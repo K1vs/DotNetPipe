@@ -1,7 +1,7 @@
 using BenchmarkDotNet.Engines;
 using System.Threading.Tasks;
 
-namespace DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsIfElseTwoStepsFast;
+namespace DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsIfTwoStepsFast;
 
 internal class VirtualClass
 {

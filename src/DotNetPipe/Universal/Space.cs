@@ -11,12 +11,39 @@ public class Space
 {
     private readonly Dictionary<string, Step> _steps = [];
 
+    private readonly Dictionary<string, IPipeline> _pipelines = [];
+
     public IReadOnlyDictionary<string, Step> Steps => _steps.AsReadOnly();
+
+    public IReadOnlyDictionary<string, IPipeline> Pipelines => _pipelines.AsReadOnly();
 
     public PipelineEntry<TInput> CreatePipeline<TInput>(string name)
     {
         var builder = new PipelineBuilder(this, name);
         return new PipelineEntry<TInput>(builder);
+    }
+
+    public IPipeline? GetPipeline(string name)
+    {
+        return _pipelines.GetValueOrDefault(name);
+    }
+
+    public OpenPipeline<TInput, TNextInput>? GetOpenPipeline<TInput, TNextInput>(string name)
+    {
+        if (_pipelines.TryGetValue(name, out var pipeline) && pipeline is OpenPipeline<TInput, TNextInput> openPipeline)
+        {
+            return openPipeline;
+        }
+        return null;
+    }
+
+    public Pipeline<TInput>? GetPipeline<TInput>(string name)
+    {
+        if (_pipelines.TryGetValue(name, out var pipeline) && pipeline is Pipeline<TInput> closedPipeline)
+        {
+            return closedPipeline;
+        }
+        return null;
     }
 
     public Step? GetStep(string name)
@@ -60,9 +87,17 @@ public class Space
         return null;
     }
 
+    internal void AddPipeline(IPipeline pipeline)
+    {
+        if (!_pipelines.TryAdd(pipeline.Name, pipeline))
+        {
+            throw new PipelineWithNameAlreadyExistsException(pipeline.Name);
+        }
+    }
+
     internal void AddStep(Step step)
     {
-        if(!_steps.TryAdd(step.Name, step))
+        if (!_steps.TryAdd(step.Name, step))
         {
             throw new StepWithNameAlreadyExistsException(step.Name);
         }

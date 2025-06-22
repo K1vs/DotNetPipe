@@ -13,7 +13,9 @@ public sealed class EntryHandlerStep<TRootStepInput>: HandlerStep<TRootStepInput
         {
             throw new InvalidOperationException("Entry step is not set");
         }
-        return new Pipeline<TRootStepInput>(Builder.Name, Builder.EntryStep, this, BuildHandler);
+        var pipeline = new Pipeline<TRootStepInput>(Builder.Name, Builder.EntryStep, this, BuildHandler);
+        Builder.Space.AddPipeline(pipeline);
+        return pipeline;
     }
 
     internal override Handler<TRootStepInput> BuildHandler()

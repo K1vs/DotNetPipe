@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsComplexFast;
+namespace DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsIfElseFast;
 
 internal class NotVirtualClass
 {

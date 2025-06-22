@@ -1,11 +1,11 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsComplexFast;
+using DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsSwitchFast;
 
 namespace DotNetPipe.Benchmarks;
 
 [MemoryDiagnoser]
-public class WithoutMutatorsComplexFast
+public class WithoutMutatorsSwitchFast
 {
     private readonly NotVirtualClass _classHandler;
 
@@ -13,14 +13,14 @@ public class WithoutMutatorsComplexFast
 
     private readonly DotNetPipePipeline _pipelineHandler;
 
-    public WithoutMutatorsComplexFast()
+    public WithoutMutatorsSwitchFast()
     {
         _classHandler = new NotVirtualClass();
         _pipelineHandler = new DotNetPipePipeline();
         _virtualClassHandler = new VirtualClass();
     }
 
-    [Params(" 123.45 ", " 678 ", " 90.12 ", "24", "some random text")]
+    [Params("105", "50", "-5", "0", "abc", "hello", "")]
     public string Input { get; set; }
 
     [Benchmark]
