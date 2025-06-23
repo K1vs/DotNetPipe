@@ -2,6 +2,8 @@ namespace K1vs.DotNetPipe.Universal.Steps.IfSteps;
 
 public sealed class EntryIfStep<TRootStepInput, TIfInput, TNextStepInput> : IfStep<TRootStepInput, TRootStepInput, TIfInput, TNextStepInput>
 {
+    public override bool IsEntryStep => true;
+
     internal EntryIfStep(string name, IfSelector<TRootStepInput, TIfInput, TNextStepInput> selector,
         Func<Space, OpenPipeline<TIfInput, TNextStepInput>> trueBuilder,
         PipelineBuilder builder)

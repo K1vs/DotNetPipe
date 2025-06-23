@@ -2,6 +2,8 @@ namespace K1vs.DotNetPipe.Universal.Steps.MultiForkSteps;
 
 public sealed class EntryMultiForkStep<TRootStepInput, TBranchesInput, TDefaultInput> : MultiForkStep<TRootStepInput, TRootStepInput, TBranchesInput, TDefaultInput>
 {
+    public override bool IsEntryStep => true;
+
     public EntryMultiForkStep(string name,
         MultiForkSelector<TRootStepInput, TBranchesInput, TDefaultInput> selector,
         Func<Space, IReadOnlyDictionary<string, Pipeline<TBranchesInput>>> branchesBuilder,

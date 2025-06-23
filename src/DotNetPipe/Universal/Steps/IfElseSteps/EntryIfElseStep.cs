@@ -2,6 +2,8 @@
 
 public class EntryIfElseStep<TRootStepInput, TIfInput, TElseInput, TNextStepInput> : IfElseStep<TRootStepInput, TRootStepInput, TIfInput, TElseInput, TNextStepInput>
 {
+    public override bool IsEntryStep => true;
+
     internal EntryIfElseStep(string name, IfElseSelector<TRootStepInput, TIfInput, TElseInput> selector,
         Func<Space, OpenPipeline<TIfInput, TNextStepInput>> trueBuilder,
         Func<Space, OpenPipeline<TElseInput, TNextStepInput>> elseBuilder,

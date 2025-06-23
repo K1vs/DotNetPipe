@@ -20,7 +20,6 @@ public class PipelineEntry<TPipelineInput>
     public EntryLinearStep<TPipelineInput, TNextInput> StartWithLinear<TNextInput>(string name, Pipe<TPipelineInput, TNextInput> next)
     {
         var step = new EntryLinearStep<TPipelineInput, TNextInput>(name, next, Builder);
-        Builder.EntryStep = step;
         return step;
     }
 
@@ -29,7 +28,6 @@ public class PipelineEntry<TPipelineInput>
         Func<Space, OpenPipeline<TIfInput, TNextInput>> trueBuilder)
     {
         var step = new EntryIfStep<TPipelineInput, TIfInput, TNextInput>(name, selector, trueBuilder, Builder);
-        Builder.EntryStep = step;
         return step;
     }
 
@@ -39,7 +37,6 @@ public class PipelineEntry<TPipelineInput>
         Func<Space, OpenPipeline<TElseInput, TNextInput>> falseBuilder)
     {
         var step = new EntryIfElseStep<TPipelineInput, TIfInput, TElseInput, TNextInput>(name, selector, trueBuilder, falseBuilder, Builder);
-        Builder.EntryStep = step;
         return step;
     }
 
@@ -49,7 +46,6 @@ public class PipelineEntry<TPipelineInput>
         OpenPipeline<TDefaultInput, TNextInput> defaultBuilder)
     {
         var step = new EntrySwitchStep<TPipelineInput, TCaseInput, TDefaultInput, TNextInput>(name, selector, caseBuilder, defaultBuilder, Builder);
-        Builder.EntryStep = step;
         return step;
     }
 
@@ -59,7 +55,6 @@ public class PipelineEntry<TPipelineInput>
         Func<Space, Pipeline<TBranchBInput>> branchBBuilder)
     {
         var step = new EntryForkStep<TPipelineInput, TBranchAInput, TBranchBInput>(name, selector, branchABuilder, branchBBuilder, Builder);
-        Builder.EntryStep = step;
         return step;
     }
 
@@ -69,14 +64,12 @@ public class PipelineEntry<TPipelineInput>
         Func<Space, Pipeline<TDefaultInput>> defaultBuilder)
     {
         var step = new EntryMultiForkStep<TPipelineInput, TBranchesInput, TDefaultInput>(name, selector, branchesBuilder, defaultBuilder, Builder);
-        Builder.EntryStep = step;
         return step;
     }
 
     public EntryHandlerStep<TPipelineInput> StartWithHandler(string name, Handler<TPipelineInput> handler)
     {
         var step = new EntryHandlerStep<TPipelineInput>(name, handler, Builder);
-        Builder.EntryStep = step;
         return step;
     }
 }

@@ -4,6 +4,8 @@ namespace K1vs.DotNetPipe.Universal;
 
 public class OpenPipeline<TInput, TNextInput> : IPipeline
 {
+    public Space Space => EntryStep.Builder.Space;
+
     public string Name { get; }
 
     public Step EntryStep { get; }
@@ -14,7 +16,7 @@ public class OpenPipeline<TInput, TNextInput> : IPipeline
 
     public ReducedPipeStep<TInput, TNextInput> ReducedPipeStep { get; }
 
-    public OpenPipeline(string name, Step entryStep, ReducedPipeStep<TInput, TNextInput> lastStep)
+    internal OpenPipeline(string name, Step entryStep, ReducedPipeStep<TInput, TNextInput> lastStep)
     {
         Name = name;
         EntryStep = entryStep;

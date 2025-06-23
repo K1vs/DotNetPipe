@@ -2,6 +2,8 @@ namespace K1vs.DotNetPipe.Universal.Steps.HandlerSteps;
 
 public sealed class EntryHandlerStep<TRootStepInput>: HandlerStep<TRootStepInput, TRootStepInput>
 {
+    public override bool IsEntryStep => true;
+
     internal EntryHandlerStep(string name, Handler<TRootStepInput> handler, PipelineBuilder builder)
         : base(name, handler, builder)
     {
