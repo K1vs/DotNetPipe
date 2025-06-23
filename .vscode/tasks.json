@@ -1,0 +1,202 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+          "label": "build-debug",
+          "command": "dotnet",
+          "type": "process",
+          "args": [
+            "build",
+            "${workspaceFolder}/DotNetPipe.sln",
+            "/property:GenerateFullPaths=true",
+            "/property:Configuration=Debug",
+            "/property:DebugType=portable",
+            "/property:Optimize=false",
+            "/consoleloggerparameters:NoSummary;ForceNoAlign"
+          ],
+          "problemMatcher": "$msCompile"
+        },
+        {
+          "label": "build-release",
+          "command": "dotnet",
+          "type": "process",
+          "args": [
+            "build",
+            "${workspaceFolder}/DotNetPipe.sln",
+            "/property:GenerateFullPaths=true",
+            "/property:Configuration=Release",
+            "/property:DebugType=portable",
+            "/property:Optimize=true",
+            "/consoleloggerparameters:NoSummary;ForceNoAlign"
+          ],
+          "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Run All Unit Tests",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "test",
+                "${workspaceFolder}/test/DotNetPipe.Tests/DotNetPipe.Tests.csproj"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Run All Benchmarks",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "run",
+                "--project",
+                "${workspaceFolder}/test/DotNetPipe.Benchmarks/DotNetPipe.Benchmarks.csproj",
+                "--configuration",
+                "Release",
+                "--",
+                "--filter",
+                "*",
+                "--join"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": false
+        },
+        {
+            "label": "Run Benchmark (Interactive Filter)",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "run",
+                "--project",
+                "${workspaceFolder}/test/DotNetPipe.Benchmarks/DotNetPipe.Benchmarks.csproj",
+                "--configuration",
+                "Release",
+                "--",
+                "--join"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": false
+        },
+        {
+            "label": "Run All Benchmarks (Dry Run)",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "run",
+                "--project",
+                "${workspaceFolder}/test/DotNetPipe.Benchmarks/DotNetPipe.Benchmarks.csproj",
+                "--configuration",
+                "Release",
+                "--",
+                "--filter",
+                "*",
+                "--job",
+                "dry",
+                "--join"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": false
+        },
+        {
+            "label": "Run Benchmark (Interactive Filter, Dry Run)",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "run",
+                "--project",
+                "${workspaceFolder}/test/DotNetPipe.Benchmarks/DotNetPipe.Benchmarks.csproj",
+                "--configuration",
+                "Release",
+                "--",
+                "--job",
+                "dry",
+                "--join"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": false
+        },
+        {
+            "label": "SonarScanner Analysis",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "dotnet sonarscanner begin /k:\"${input:sonarProjectKey}\" /d:sonar.host.url=\"http://localhost:9000\" /d:sonar.token=\"${input:sonarToken}\"; dotnet build; dotnet sonarscanner end /d:sonar.token=\"${input:sonarToken}\""
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": false
+        }
+    ],
+    "inputs": [
+        {
+            "id": "sonarProjectKey",
+            "description": "SonarQube project key",
+            "type": "promptString",
+            "password": false
+        },
+        {
+            "id": "sonarToken",
+            "description": "SonarQube authentication token",
+            "type": "promptString",
+            "password": true
+        }
+    ]
+}

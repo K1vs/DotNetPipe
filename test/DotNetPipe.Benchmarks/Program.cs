@@ -3,12 +3,12 @@ using BenchmarkDotNet.Running;
 
 namespace DotNetPipe.Benchmarks;
 
-public class Program
+public static class Program
 {
     public static void Main(string[] args)
     {
-        var config = DefaultConfig.Instance;
-        var summaries = BenchmarkSwitcher
+        IConfig config = System.Diagnostics.Debugger.IsAttached ? new DebugInProcessConfig() : DefaultConfig.Instance;
+        BenchmarkSwitcher
             .FromAssembly(typeof(Program).Assembly)
             .Run(args, config);
     }

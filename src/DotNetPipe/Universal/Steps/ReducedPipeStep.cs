@@ -63,7 +63,7 @@ public abstract class ReducedPipeStep<TRootStepInput, TNextInput>: Step
         return new PipeForkStep<TRootStepInput, TNextInput, TBranchAInput, TBranchBInput>(this, name, selector, branchABuilder, branchBBuilder, Builder);
     }
 
-    public PipeMultiForkStep<TRootStepInput, TNextInput, TBranchesInput, TDefaultInput> ThenMultiFork<TBranchesInput, TDefaultInput, TNextStepNextInput>(string name,
+    public PipeMultiForkStep<TRootStepInput, TNextInput, TBranchesInput, TDefaultInput> ThenMultiFork<TBranchesInput, TDefaultInput>(string name,
         MultiForkSelector<TNextInput, TBranchesInput, TDefaultInput> selector,
         Func<Space, IReadOnlyDictionary<string, Pipeline<TBranchesInput>>> branchesBuilder,
         Func<Space, Pipeline<TDefaultInput>> defaultBuilder)

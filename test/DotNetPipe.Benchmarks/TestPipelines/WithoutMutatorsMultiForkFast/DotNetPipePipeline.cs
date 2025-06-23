@@ -23,7 +23,7 @@ internal class DotNetPipePipeline
         var space = Pipelines.CreateSpace();
 
         // Create sub-pipelines before main pipeline
-        var digitPipeline = space.CreatePipeline<string>("DigitProcessingPipeline")
+        space.CreatePipeline<string>("DigitProcessingPipeline")
             .StartWithLinear<int>("ParseStringToInt", async (input, next) =>
             {
                 if (int.TryParse(input, out var number))
@@ -43,7 +43,7 @@ internal class DotNetPipePipeline
             .HandleWith("IntHandler", async (input) => _consumer.Consume(input))
             .BuildPipeline();
 
-        var letterPipeline = space.CreatePipeline<string>("LetterProcessingPipeline")
+        space.CreatePipeline<string>("LetterProcessingPipeline")
             .StartWithLinear<string>("AddSpaces", async (input, next) =>
             {
                 var withSpaces = $"  {input}  ";
@@ -52,7 +52,7 @@ internal class DotNetPipePipeline
             .HandleWith("StringHandler", async (input) => _consumer.Consume(input))
             .BuildPipeline();
 
-        var specialCharPipeline = space.CreatePipeline<string>("SpecialCharProcessingPipeline")
+        space.CreatePipeline<string>("SpecialCharProcessingPipeline")
             .StartWithLinear<string>("RemoveWhitespace", async (input, next) =>
             {
                 var noWhitespace = new string(input.Where(c => !char.IsWhiteSpace(c)).ToArray());
@@ -71,7 +71,7 @@ internal class DotNetPipePipeline
             .HandleWith("CharArrayHandler", async (input) => _consumer.Consume(input))
             .BuildPipeline();
 
-        var defaultPipeline = space.CreatePipeline<char[]>("DefaultProcessingPipeline")
+        space.CreatePipeline<char[]>("DefaultProcessingPipeline")
             .StartWithLinear<(int DigitCount, int LetterCount)>("CountDigitsAndLetters", async (input, next) =>
             {
                 var digitCount = input.Count(char.IsDigit);
@@ -93,7 +93,7 @@ internal class DotNetPipePipeline
                 var trimmed = input.Trim();
                 await next(trimmed);
             })
-            .ThenMultiFork<string, char[], object>("ClassifyStringContent", async (input, branches, defaultNext) =>
+            .ThenMultiFork<string, char[]>("ClassifyStringContent", async (input, branches, defaultNext) =>
             {
                 var containsOnlyDigits = !string.IsNullOrEmpty(input) && input.All(char.IsDigit);
                 var containsOnlyLetters = !string.IsNullOrEmpty(input) && input.All(char.IsLetter);

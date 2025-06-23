@@ -67,8 +67,7 @@ public class StepMutators<TStepDelegate>
         return null;
     }
 
-    public StepMutator<TStepDelegate>? MoveMutator<TMutator>(int priority, int newPriority)
-        where TMutator : class
+    public StepMutator<TStepDelegate>? MoveMutator(int priority, int newPriority)
     {
         if (_mutators.Remove(priority, out var mutator))
         {

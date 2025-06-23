@@ -8,7 +8,7 @@ public abstract class HandlerStep<TRootStepInput, TInput>: Step
 
     public StepMutators<Handler<TInput>> Mutators { get; }
 
-    internal HandlerStep(string name, Handler<TInput> handler, PipelineBuilder builder)
+    private protected HandlerStep(string name, Handler<TInput> handler, PipelineBuilder builder)
         : base(name, builder)
     {
         _originalHandler = handler;

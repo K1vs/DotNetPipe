@@ -28,20 +28,20 @@ public class Space
         return _pipelines.GetValueOrDefault(name);
     }
 
-    public OpenPipeline<TInput, TNextInput>? GetOpenPipeline<TInput, TNextInput>(string name)
-    {
-        if (_pipelines.TryGetValue(name, out var pipeline) && pipeline is OpenPipeline<TInput, TNextInput> openPipeline)
-        {
-            return openPipeline;
-        }
-        return null;
-    }
-
     public Pipeline<TInput>? GetPipeline<TInput>(string name)
     {
         if (_pipelines.TryGetValue(name, out var pipeline) && pipeline is Pipeline<TInput> closedPipeline)
         {
             return closedPipeline;
+        }
+        return null;
+    }
+
+    public OpenPipeline<TInput, TNextInput>? GetOpenPipeline<TInput, TNextInput>(string name)
+    {
+        if (_pipelines.TryGetValue(name, out var pipeline) && pipeline is OpenPipeline<TInput, TNextInput> openPipeline)
+        {
+            return openPipeline;
         }
         return null;
     }

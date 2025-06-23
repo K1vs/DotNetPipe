@@ -1,0 +1,12 @@
+{
+    "cSpell.words": [
+        "Diagnoser",
+        "pdbonly",
+        "sonarlint",
+        "sonarqube"
+    ],
+    "sonarlint.connectedMode.project": {
+        "connectionId": "http-localhost-9000",
+        "projectKey": "K1vs_DotNetPipe_b9876629-84b6-4f47-9d8c-3dcc83163769"
+    }
+}

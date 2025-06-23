@@ -20,6 +20,6 @@ public delegate ValueTask MultiForkSelector<TInput, TBranchesInput, TDefaultInpu
     IReadOnlyDictionary<string, Handler<TBranchesInput>> branches,
     Handler<TDefaultInput> defaultNext);
 
-public delegate ValueTask Pipe<TInput, TNextInput>(TInput input, Handler<TNextInput> next);
+public delegate ValueTask Pipe<TInput, out TNextInput>(TInput input, Handler<TNextInput> next);
 
-public delegate ValueTask Handler<TInput>(TInput input);
+public delegate ValueTask Handler<in TInput>(TInput input);

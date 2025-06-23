@@ -471,7 +471,7 @@ public class WithoutMutationPipelineTests
         var space = Pipelines.CreateSpace();
 
         // Create sub-pipelines before main pipeline
-        var digitPipeline = space.CreatePipeline<string>("DigitProcessingPipeline")
+        space.CreatePipeline<string>("DigitProcessingPipeline")
             .StartWithLinear<int>("ParseStringToInt", async (input, next) =>
             {
                 if (int.TryParse(input, out var number))
@@ -491,7 +491,7 @@ public class WithoutMutationPipelineTests
             .HandleWith("IntHandler", async (input) => await intHandler(input))
             .BuildPipeline();
 
-        var letterPipeline = space.CreatePipeline<string>("LetterProcessingPipeline")
+        space.CreatePipeline<string>("LetterProcessingPipeline")
             .StartWithLinear<string>("AddSpaces", async (input, next) =>
             {
                 var withSpaces = $"  {input}  ";
@@ -500,7 +500,7 @@ public class WithoutMutationPipelineTests
             .HandleWith("StringHandler", async (input) => await stringHandler(input))
             .BuildPipeline();
 
-        var specialCharPipeline = space.CreatePipeline<string>("SpecialCharProcessingPipeline")
+        space.CreatePipeline<string>("SpecialCharProcessingPipeline")
             .StartWithLinear<string>("RemoveWhitespace", async (input, next) =>
             {
                 var noWhitespace = new string(input.Where(c => !char.IsWhiteSpace(c)).ToArray());
@@ -539,7 +539,7 @@ public class WithoutMutationPipelineTests
                 var trimmed = input.Trim();
                 await next(trimmed);
             })
-            .ThenMultiFork<string, char[], object>("ClassifyStringContent", async (input, branches, defaultNext) =>
+            .ThenMultiFork<string, char[]>("ClassifyStringContent", async (input, branches, defaultNext) =>
             {
                 var containsOnlyDigits = !string.IsNullOrEmpty(input) && input.All(char.IsDigit);
                 var containsOnlyLetters = !string.IsNullOrEmpty(input) && input.All(char.IsLetter);

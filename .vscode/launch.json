@@ -1,0 +1,39 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Benchmark (Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/test/DotNetPipe.Benchmarks/bin/Debug/net8.0/DotNetPipe.Benchmarks.dll",
+            "args": ["--job", "dry", "--join"],
+            "cwd": "${workspaceFolder}/test/DotNetPipe.Benchmarks",
+            "console": "integratedTerminal",
+            "stopAtEntry": false,
+            "preLaunchTask": "build-debug",
+            "justMyCode": false,
+            "enableStepFiltering": false,
+            "suppressJITOptimizations": true
+        },
+        {
+            "name": "Run Benchmark (Release)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/test/DotNetPipe.Benchmarks/bin/Release/net8.0/DotNetPipe.Benchmarks.dll",
+            "args": ["--job", "dry", "--join"],
+            "cwd": "${workspaceFolder}/test/DotNetPipe.Benchmarks",
+            "console": "integratedTerminal",
+            "stopAtEntry": false,
+            "preLaunchTask": "build-release",
+            "justMyCode": true,
+            "enableStepFiltering": false,
+            "suppressJITOptimizations": true
+        },
+        {
+            "name": "Debug .NET Process",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        }
+    ]
+}

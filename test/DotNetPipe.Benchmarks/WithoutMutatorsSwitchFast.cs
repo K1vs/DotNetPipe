@@ -1,15 +1,17 @@
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Order;
 using DotNetPipe.Benchmarks.TestPipelines.WithoutMutatorsSwitchFast;
 
 namespace DotNetPipe.Benchmarks;
 
 [MemoryDiagnoser]
+[Orderer(SummaryOrderPolicy.Declared, MethodOrderPolicy.Declared)]
 public class WithoutMutatorsSwitchFast
 {
     private readonly NotVirtualClass _classHandler;
 
-    private readonly VirtualClass _virtualClassHandler = new();
+    private readonly VirtualClass _virtualClassHandler;
 
     private readonly DotNetPipePipeline _pipelineHandler;
 

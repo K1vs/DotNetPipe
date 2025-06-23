@@ -12,7 +12,7 @@ public abstract class IfElseStep<TRootStepInput, TInput, TIfInput, TElseInput, T
 
     public OpenPipeline<TElseInput, TNextStepInput> ElsePipeline { get; }
 
-    public IfElseStep(string name,
+    private protected IfElseStep(string name,
         IfElseSelector<TInput, TIfInput, TElseInput> selector,
         Func<Space, OpenPipeline<TIfInput, TNextStepInput>> trueBuilder,
         Func<Space, OpenPipeline<TElseInput, TNextStepInput>> elseBuilder,

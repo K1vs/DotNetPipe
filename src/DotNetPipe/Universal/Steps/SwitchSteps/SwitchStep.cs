@@ -7,7 +7,7 @@ public abstract class SwitchStep<TRootStepInput, TInput, TCaseInput, TDefaultInp
 {
     private readonly SwitchSelector<TInput, TCaseInput, TDefaultInput> _selector;
 
-    public StepMutators<SwitchSelector<TInput, TCaseInput, TDefaultInput>> _mutators;
+    public StepMutators<SwitchSelector<TInput, TCaseInput, TDefaultInput>> Mutators { get; }
 
     public IReadOnlyDictionary<string, OpenPipeline<TCaseInput, TNextStepInput>> CasesPipelines { get; }
 
@@ -21,10 +21,10 @@ public abstract class SwitchStep<TRootStepInput, TInput, TCaseInput, TDefaultInp
         : base(name, builder)
     {
         _selector = selector;
-        _mutators = new StepMutators<SwitchSelector<TInput, TCaseInput, TDefaultInput>>();
+        Mutators = new StepMutators<SwitchSelector<TInput, TCaseInput, TDefaultInput>>();
         CasesPipelines = caseBuilder(builder.Space);
         DefaultPipeline = defaultPipeline;
     }
 
-    private protected SwitchSelector<TInput, TCaseInput, TDefaultInput> CreateStepSelector() => _mutators.MutateDelegate(_selector);
+    private protected SwitchSelector<TInput, TCaseInput, TDefaultInput> CreateStepSelector() => Mutators.MutateDelegate(_selector);
 }
