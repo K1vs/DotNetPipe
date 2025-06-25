@@ -43,9 +43,9 @@ public class WithMutationPipelineTests
     }
 
     [Theory]
-    [InlineData(-4, 5, 3)]  // (-4 + 5) * 2 + 1 = 3
-    [InlineData(0, 10, 21)]  // (0 + 10) * 2 + 1 = 21
-    [InlineData(2, 3, 11)]   // (2 + 3) * 2 + 1 = 11
+    [InlineData(-4, 5, -2)]   // ((-4 * 2) + 5) + 1 = (-8 + 5) + 1 = -2
+    [InlineData(0, 10, 11)]  // ((0 * 2) + 10) + 1 = (0 + 10) + 1 = 11
+    [InlineData(2, 3, 8)]    // ((2 * 2) + 3) + 1 = (4 + 3) + 1 = 8
     public async Task BuildAndRunPipeline_WhenLinearStepThenHandlerStep_ShouldRun(int inputValue, int constantToAdd, int expectedHandlerInput)
     {
         // Arrange
@@ -74,19 +74,15 @@ public class WithMutationPipelineTests
 
     private void ConfigureTwoStepPipelineMutators(Space space)
     {
-        // Mutator for linear step - multiply by 2
+        // Mutator for linear step - multiply input by 2 before processing
         var linearStep = space.GetRequiredLinearStep<int, int, int>("TestTwoStepPipeline", "AddConstant");
         var linearMutator = new StepMutator<Pipe<int, int>>("AddConstantMutator", 1, (pipe) =>
         {
             return async (input, next) =>
             {
-                // Apply original linear step logic first
-                await pipe(input, async (result) =>
-                {
-                    // Then apply mutation - multiply by 2
-                    result *= 2;
-                    await next(result);
-                });
+                // Apply mutation to input first - multiply by 2
+                input *= 2;
+                await pipe(input, next);
             };
         });
         linearStep.Mutators.AddMutator(linearMutator, AddingMode.ExactPlace);
@@ -105,10 +101,10 @@ public class WithMutationPipelineTests
     }
 
     [Theory]
-    [InlineData(2, 3, 2, 71)]   // Step1: (2 + 3) + 5 = 10, Step2: 10 * 2 + 10 * 5 = 70, Handler: 70 + 1 = 71
-    [InlineData(0, 5, 3, 81)]   // Step1: (0 + 5) + 5 = 10, Step2: 10 * 3 + 10 * 5 = 80, Handler: 80 + 1 = 81
-    [InlineData(-1, 4, 2, 57)]  // Step1: (-1 + 4) + 5 = 8, Step2: 8 * 2 + 8 * 5 = 56, Handler: 56 + 1 = 57
-    [InlineData(10, -5, 4, 91)] // Step1: (10 + (-5)) + 5 = 10, Step2: 10 * 4 + 10 * 5 = 90, Handler: 90 + 1 = 91
+    [InlineData(2, 3, 2, 31)]   // Step1: (2 + 5) + 3 = 10, Step2: (10 + 5) * 2 = 30, Handler: 30 + 1 = 31
+    [InlineData(0, 5, 3, 46)]   // Step1: (0 + 5) + 5 = 10, Step2: (10 + 5) * 3 = 45, Handler: 45 + 1 = 46
+    [InlineData(-1, 4, 2, 27)]  // Step1: (-1 + 5) + 4 = 8, Step2: (8 + 5) * 2 = 26, Handler: 26 + 1 = 27
+    [InlineData(10, -5, 4, 61)] // Step1: (10 + 5) + (-5) = 10, Step2: (10 + 5) * 4 = 60, Handler: 60 + 1 = 61
     public async Task BuildAndRunPipeline_WhenTwoLinearStepsThenHandlerStep_ShouldRun(int inputValue, int constantToAdd, int multiplier, int expectedHandlerInput)
     {
         // Arrange
@@ -142,43 +138,28 @@ public class WithMutationPipelineTests
 
     private void ConfigureThreeStepPipelineMutators(Space space)
     {
-        // Mutator for first linear step (AddConstant) - add 5 to result
+        // Mutator for first linear step (AddConstant) - add 5 to input
         var firstLinearStep = space.GetRequiredLinearStep<int, int, int>("TestThreeStepPipeline", "AddConstant");
         var firstLinearMutator = new StepMutator<Pipe<int, int>>("AddConstantMutator", 1, (pipe) =>
         {
             return async (input, next) =>
             {
-                // Apply original linear step logic first
-                await pipe(input, async (result) =>
-                {
-                    // Then apply mutation - add 5
-                    result += 5;
-                    await next(result);
-                });
+                // Apply mutation to input first - add 5
+                input += 5;
+                await pipe(input, next);
             };
         });
         firstLinearStep.Mutators.AddMutator(firstLinearMutator, AddingMode.ExactPlace);
 
-        // Mutator for second linear step (MultiplyByCoefficient) - add 5 to multiplier
+        // Mutator for second linear step (MultiplyByCoefficient) - add 5 to input before multiplying
         var secondLinearStep = space.GetRequiredLinearStep<int, int, int>("TestThreeStepPipeline", "MultiplyByCoefficient");
         var secondLinearMutator = new StepMutator<Pipe<int, int>>("MultiplyByCoefficient", 1, (pipe) =>
         {
             return async (input, next) =>
             {
-                // Apply mutation to input first - simulate changing the multiplier by adding 5 to input
-                // Since we can't change the multiplier directly, we'll modify the calculation logic
-                await pipe(input, async (result) =>
-                {
-                    // Recalculate: instead of input * multiplier, do input * (multiplier + 5)
-                    // But we already got result = input * multiplier, so we need to adjust
-                    // result = input * multiplier, so multiplier = result / input (if input != 0)
-                    // new_result = input * (multiplier + 5) = input * multiplier + input * 5 = result + input * 5
-                    if (input != 0)
-                    {
-                        result = result + input * 5; // This gives us input * (multiplier + 5)
-                    }
-                    await next(result);
-                });
+                // Apply mutation to input first - add 5 before multiplying
+                input += 5;
+                await pipe(input, next);
             };
         });
         secondLinearStep.Mutators.AddMutator(secondLinearMutator, AddingMode.ExactPlace);
@@ -245,24 +226,24 @@ public class WithMutationPipelineTests
 
     private void ConfigureStringParsingPipelineMutators(Space space)
     {
-        // Mutator for ParseString step - add 2 to parsed value (only if parsing succeeds)
+        // Mutator for ParseString step - add 2 to input after parsing (only if parsing succeeds)
         var parseStep = space.GetRequiredLinearStep<string, string, int>("TestStringParsingPipeline", "ParseString");
         var parseMutator = new StepMutator<Pipe<string, int>>("ParseStringMutator", 1, (pipe) =>
         {
             return async (input, next) =>
             {
-                // Apply original parsing logic first
-                await pipe(input, async (parsed) =>
+                // Custom parsing logic with mutation
+                if (int.TryParse(input, out var parsed))
                 {
-                    // Then apply mutation - add 2 to successfully parsed value
-                    parsed += 2;
+                    parsed += 2; // Apply mutation - add 2 to successfully parsed value
                     await next(parsed);
-                });
+                }
+                // If doesn't parse - don't call next
             };
         });
         parseStep.Mutators.AddMutator(parseMutator, AddingMode.ExactPlace);
 
-        // Mutator for AddConstant step - no additional changes, just pass through
+        // Mutator for AddConstant step - pass through as-is
         var addConstantStep = space.GetRequiredLinearStep<string, int, int>("TestStringParsingPipeline", "AddConstant");
         var addConstantMutator = new StepMutator<Pipe<int, int>>("AddConstantMutator", 1, (pipe) =>
         {
@@ -288,10 +269,10 @@ public class WithMutationPipelineTests
     }
 
     [Theory]
-    [InlineData(" 10 ", -2, 8)]     // " 10 " -> trim -> 10 (int) -> 10 + (-2) = 8 (handler adds 1 but this is int path, so no mutation)
-    [InlineData("3.7", 5, 10)]      // "3.7" -> trim -> 3.7 (float) -> round to 4 + 1 (mutator) = 5 -> 5 + 5 = 10
-    [InlineData(" 2.3 ", 1, 4)]     // " 2.3 " -> trim -> 2.3 (float) -> round to 2 + 1 (mutator) = 3 -> 3 + 1 = 4
-    [InlineData("5.5", 2, 9)]       // "5.5" -> trim -> 5.5 (float) -> round to 6 + 1 (mutator) = 7 -> 7 + 2 = 9
+    [InlineData(" 10 ", -2, 9)]     // " 10 " -> trim -> 10 -> float pipeline -> 10+1=11 -> round to 11 -> 11 + (-2) = 9
+    [InlineData("3.7", 5, 10)]      // "3.7" -> trim -> 3.7 -> float pipeline -> 3.7+1=4.7 -> round to 5 -> 5 + 5 = 10
+    [InlineData(" 2.3 ", 1, 4)]     // " 2.3 " -> trim -> 2.3 -> float pipeline -> 2.3+1=3.3 -> round to 3 -> 3 + 1 = 4
+    [InlineData("5.5", 2, 8)]       // "5.5" -> trim -> 5.5 -> float pipeline -> 5.5+1=6.5 -> round to 6 -> 6 + 2 = 8
     public async Task BuildAndRunPipeline_WhenIfStepHandlesIntAndFloat_ShouldProcessCorrectly(string inputValue, int constantToAdd, int expectedResult)
     {
         // Arrange
@@ -352,7 +333,7 @@ public class WithMutationPipelineTests
 
     private void ConfigureIfStepPipelineMutators(Space space)
     {
-        // Mutator for TrimString step - no change needed, just pass through
+        // Mutator for TrimString step - pass through as-is
         var trimStep = space.GetRequiredLinearStep<string, string, string>("TestIfStepPipeline", "TrimString");
         var trimMutator = new StepMutator<Pipe<string, string>>("TrimStringMutator", 1, (pipe) =>
         {
@@ -363,23 +344,45 @@ public class WithMutationPipelineTests
         });
         trimStep.Mutators.AddMutator(trimMutator, AddingMode.ExactPlace);
 
-        // Mutator for the RoundToInt step in the conditional pipeline - add 1 to the rounded value
+        // Mutator for the If step selector - modify the logic to treat all strings as potential floats
+        var ifStep = space.GetRequiredIfStep<string, string, string, int>("TestIfStepPipeline", "CheckIntOrFloat");
+        var ifSelectorMutator = new StepMutator<IfSelector<string, string, int>>("CheckIntOrFloatMutator", 1, (selector) =>
+        {
+            return async (input, conditionalNext, next) =>
+            {
+                // Modified logic: always try to go to conditional pipeline first (for float parsing)
+                // This will change the behavior - all inputs will be treated as potential floats
+                await conditionalNext(input);
+            };
+        });
+        ifStep.Mutators.AddMutator(ifSelectorMutator, AddingMode.ExactPlace);
+
+        // Mutator for ParseFloat step in FloatProcessing - pass through as-is
+        var parseFloatStep = space.GetRequiredLinearStep<string, string, double>("FloatProcessing", "ParseFloat");
+        var parseFloatMutator = new StepMutator<Pipe<string, double>>("ParseFloatMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        parseFloatStep.Mutators.AddMutator(parseFloatMutator, AddingMode.ExactPlace);
+
+        // Mutator for the RoundToInt step in the conditional pipeline - add 1 to input before rounding
         var roundStep = space.GetRequiredLinearStep<string, double, int>("FloatProcessing", "RoundToInt");
         var roundMutator = new StepMutator<Pipe<double, int>>("RoundToIntMutator", 1, (pipe) =>
         {
             return async (input, next) =>
             {
-                await pipe(input, async (rounded) =>
-                {
-                    // Add 1 to the rounded value
-                    rounded += 1;
-                    await next(rounded);
-                });
+                // Add 1 to the input before rounding
+                input += 1;
+                var rounded = (int)Math.Round(input);
+                await next(rounded);
             };
         });
         roundStep.Mutators.AddMutator(roundMutator, AddingMode.ExactPlace);
 
-        // Mutator for AddConstant step - no additional changes
+        // Mutator for AddConstant step - pass through as-is
         var addConstantStep = space.GetRequiredLinearStep<string, int, int>("TestIfStepPipeline", "AddConstant");
         var addConstantMutator = new StepMutator<Pipe<int, int>>("AddConstantMutator", 1, (pipe) =>
         {
@@ -390,7 +393,7 @@ public class WithMutationPipelineTests
         });
         addConstantStep.Mutators.AddMutator(addConstantMutator, AddingMode.ExactPlace);
 
-        // Mutator for handler step - no change for this test
+        // Mutator for handler step - pass through as-is
         var handlerStep = space.GetRequiredHandlerStep<string, int>("TestIfStepPipeline", "TestHandler");
         var handlerMutator = new StepMutator<Handler<int>>("TestHandlerMutator", 1, (handler) =>
         {
@@ -403,11 +406,11 @@ public class WithMutationPipelineTests
     }
 
     [Theory]
-    [InlineData("  5  ", 3, 2, 16)]    // "  5  " -> trim -> 5 (int) -> false branch -> 5 * 2 = 10 -> +2 = 12 -> 12 + 3 = 15 -> +1 = 16
-    [InlineData(" 10 ", -2, 4, 41)]    // " 10 " -> trim -> 10 (int) -> false branch -> 10 * 4 = 40 -> +2 = 42 -> 42 + (-2) = 40 -> +1 = 41
-    [InlineData("3.7", 5, 3, 11)]      // "3.7" -> trim -> 3.7 (float) -> true branch -> round to 4 -> +1 = 5 -> 5 + 5 = 10 -> +1 = 11
-    [InlineData(" 2.3 ", 1, 5, 5)]     // " 2.3 " -> trim -> 2.3 (float) -> true branch -> round to 2 -> +1 = 3 -> 3 + 1 = 4 -> +1 = 5
-    [InlineData("5.5", 2, 7, 10)]      // "5.5" -> trim -> 5.5 (float) -> true branch -> round to 6 -> +1 = 7 -> 7 + 2 = 9 -> +1 = 10
+    [InlineData("  5  ", 3, 2, 10)]    // "  5  " -> trim -> 5 (int) -> true branch (float processing) -> parse 5.0 -> +1 = 6.0 -> round to 6 -> 6 + 3 = 9 -> +1 = 10
+    [InlineData(" 10 ", -2, 4, 10)]   // " 10 " -> trim -> 10 (int) -> true branch (float processing) -> parse 10.0 -> +1 = 11.0 -> round to 11 -> 11 + (-2) = 9 -> +1 = 10
+    [InlineData("3.7", 5, 3, 12)]     // "3.7" -> trim -> 3.7 (float) -> false branch (int processing) -> 0 + 2 = 2 -> 2 * 3 = 6 -> 6 + 5 = 11 -> +1 = 12
+    [InlineData(" 2.3 ", 1, 5, 12)]   // " 2.3 " -> trim -> 2.3 (float) -> false branch (int processing) -> 0 + 2 = 2 -> 2 * 5 = 10 -> 10 + 1 = 11 -> +1 = 12
+    [InlineData("5.5", 2, 7, 17)]     // "5.5" -> trim -> 5.5 (float) -> false branch (int processing) -> 0 + 2 = 2 -> 2 * 7 = 14 -> 14 + 2 = 16 -> +1 = 17
     public async Task BuildAndRunPipeline_WhenIfElseStepHandlesIntFloatOrDefault_ShouldProcessCorrectly(string inputValue, int constantToAdd, int multiplier, int expectedResult)
     {
         // Arrange
@@ -480,7 +483,7 @@ public class WithMutationPipelineTests
 
     private void ConfigureIfElseStepPipelineMutators(Space space)
     {
-        // Mutator for TrimString step - no change needed, just pass through
+        // Mutator for TrimString step - pass through as-is
         var trimStep = space.GetRequiredLinearStep<string, string, string>("TestIfElseStepPipeline", "TrimString");
         var trimMutator = new StepMutator<Pipe<string, string>>("TrimStringMutator", 1, (pipe) =>
         {
@@ -491,37 +494,71 @@ public class WithMutationPipelineTests
         });
         trimStep.Mutators.AddMutator(trimMutator, AddingMode.ExactPlace);
 
-        // Mutator for the RoundToInt step in the FloatProcessing pipeline - add 1 to the rounded value
+        // Mutator for the IfElse step selector - modify the logic to swap the branches
+        var ifElseStep = space.GetRequiredIfElseStep<string, string, string, int, int>("TestIfElseStepPipeline", "CheckIntOrFloat");
+        var ifElseSelectorMutator = new StepMutator<IfElseSelector<string, string, int>>("CheckIntOrFloatMutator", 1, (selector) =>
+        {
+            return async (input, trueNext, falseNext) =>
+            {
+                // Modified logic: swap the branches - what was true becomes false and vice versa
+                if (int.TryParse(input, out var intValue))
+                {
+                    // If it's an int, go to true branch (was false branch before)
+                    // Now int values go to float processing pipeline
+                    await trueNext(input);
+                }
+                else
+                {
+                    // If not an int, go to false branch (was true branch before)
+                    // This will cause an error since false branch expects int, but we have string
+                    // So we need to provide a default int value
+                    await falseNext(0); // Use 0 as default for non-parseable strings
+                }
+            };
+        });
+        ifElseStep.Mutators.AddMutator(ifElseSelectorMutator, AddingMode.ExactPlace);
+
+        // Mutator for ParseFloat step in FloatProcessing - pass through as-is
+        var parseFloatStep = space.GetRequiredLinearStep<string, string, double>("FloatProcessing", "ParseFloat");
+        var parseFloatMutator = new StepMutator<Pipe<string, double>>("ParseFloatMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        parseFloatStep.Mutators.AddMutator(parseFloatMutator, AddingMode.ExactPlace);
+
+        // Mutator for the RoundToInt step in the FloatProcessing pipeline - add 1 to input before rounding
         var roundStep = space.GetRequiredLinearStep<string, double, int>("FloatProcessing", "RoundToInt");
         var roundMutator = new StepMutator<Pipe<double, int>>("RoundToIntMutator", 1, (pipe) =>
         {
             return async (input, next) =>
             {
-                await pipe(input, async (rounded) =>
-                {
-                    // Add 1 to the rounded value
-                    rounded += 1;
-                    await next(rounded);
-                });
+                // Add 1 to the input before rounding
+                input += 1;
+                var rounded = (int)Math.Round(input);
+                await next(rounded);
             };
         });
-        roundStep.Mutators.AddMutator(roundMutator, AddingMode.ExactPlace);        // Mutator for ParseIntOrDefault step in the IntOrDefaultProcessing pipeline - add 2 to the result
+        roundStep.Mutators.AddMutator(roundMutator, AddingMode.ExactPlace);
+
+        // Mutator for ParseIntOrDefault step in the IntOrDefaultProcessing pipeline - multiply by multiplier + 2
         var parseIntStep = space.GetRequiredLinearStep<int, int, int>("IntOrDefaultProcessing", "ParseIntOrDefault");
         var parseIntMutator = new StepMutator<Pipe<int, int>>("ParseIntOrDefaultMutator", 1, (pipe) =>
         {
             return async (input, next) =>
             {
-                await pipe(input, async (result) =>
-                {
-                    // Add 2 to the multiplied result
-                    result += 2;
-                    await next(result);
-                });
+                // Apply original logic but use (multiplier + 2) instead of multiplier
+                // Since we can't access multiplier directly, we need to find another way
+                // We'll add 2 to the input before multiplying
+                input += 2; // This effectively changes the multiplier effect
+                await pipe(input, next);
             };
         });
         parseIntStep.Mutators.AddMutator(parseIntMutator, AddingMode.ExactPlace);
 
-        // Mutator for AddConstant step - no additional changes
+        // Mutator for AddConstant step - pass through as-is
         var addConstantStep = space.GetRequiredLinearStep<string, int, int>("TestIfElseStepPipeline", "AddConstant");
         var addConstantMutator = new StepMutator<Pipe<int, int>>("AddConstantMutator", 1, (pipe) =>
         {
@@ -547,10 +584,10 @@ public class WithMutationPipelineTests
     }
 
     [Theory]
-    [InlineData(" 105 ", 318)]    // >100 -> *3 = 315 -> +3 = 318
-    [InlineData(" 50 ", 55)]      // 0<x<100 -> +2 = 52 -> +3 = 55
-    [InlineData(" -5 ", -7)]      // <0 -> *2 = -10 -> +3 = -7
-    [InlineData(" 0 ", 3)]        // =0 -> stay 0 -> +3 = 3
+    [InlineData(" 105 ", 318)]    // >50 -> GreaterThan100 -> *3 = 315 -> +3 = 318
+    [InlineData(" 50 ", 55)]      // 0<x<=50 -> BetweenZeroAndHundred -> +2 = 52 -> +3 = 55
+    [InlineData(" -5 ", -7)]      // <=0 -> LessThanZero -> *2 = -10 -> +3 = -7
+    [InlineData(" 0 ", 3)]        // <=0 -> LessThanZero -> *2 = 0 -> +3 = 3
     [InlineData("abc", 6)]      // not a number -> string length = 3 -> +3 = 6
     [InlineData("hello", 8)]    // not a number -> string length = 5 -> +3 = 8
     [InlineData("", 3)]         // empty string -> length = 0 -> +3 = 3
@@ -560,7 +597,7 @@ public class WithMutationPipelineTests
         var handler = Substitute.For<Func<int, ValueTask>>();
         handler.Invoke(Arg.Is(expectedResult)).Returns(ValueTask.CompletedTask);
 
-        var space = new Space();
+        var space = Pipelines.CreateSpace();
         var defaultPipeline = space.CreatePipeline<int>("StringLengthPipeline")
             .StartWithLinear<int>("IdentityOperation", async (input, next) =>
             {
@@ -568,7 +605,7 @@ public class WithMutationPipelineTests
             })
             .BuildOpenPipeline();
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestSwitchPipeline")
+        var pipeline = space.CreatePipeline<string>("TestSwitchPipeline")
             .StartWithLinear<string>("TrimString", async (input, next) =>
             {
                 var trimmed = input.Trim();
@@ -650,7 +687,7 @@ public class WithMutationPipelineTests
 
     private void ConfigureSwitchStepPipelineMutators(Space space)
     {
-        // Mutator for TrimString step - no change needed, just pass through
+        // Mutator for TrimString step - pass through as-is
         var trimStep = space.GetRequiredLinearStep<string, string, string>("TestSwitchPipeline", "TrimString");
         var trimMutator = new StepMutator<Pipe<string, string>>("TrimStringMutator", 1, (pipe) =>
         {
@@ -660,6 +697,95 @@ public class WithMutationPipelineTests
             };
         });
         trimStep.Mutators.AddMutator(trimMutator, AddingMode.ExactPlace);
+
+        // Mutator for NumberRangeSwitch selector - modify the switching logic
+        var switchStep = space.GetRequiredSwitchStep<string, string, int, int, int>("TestSwitchPipeline", "NumberRangeSwitch");
+        var switchSelectorMutator = new StepMutator<SwitchSelector<string, int, int>>("NumberRangeSwitchMutator", 1, (selector) =>
+        {
+            return async (input, cases, defaultNext) =>
+            {
+                // Modified logic: change the conditions for switching
+                // Now values > 50 (instead of > 100) go to GreaterThan100 case
+                // Values <= 0 (instead of < 0) go to LessThanZero case
+                if (int.TryParse(input, out var number))
+                {
+                    if (number > 50) // Changed from > 100
+                    {
+                        await cases["GreaterThan100"](number);
+                    }
+                    else if (number > 0)
+                    {
+                        await cases["BetweenZeroAndHundred"](number);
+                    }
+                    else // number <= 0 (changed from < 0)
+                    {
+                        await cases["LessThanZero"](number);
+                    }
+                }
+                else
+                {
+                    // If not a number, use string length
+                    var stringLength = input.Length;
+                    await defaultNext(stringLength);
+                }
+            };
+        });
+        switchStep.Mutators.AddMutator(switchSelectorMutator, AddingMode.ExactPlace);
+
+        // Mutator for MultiplyOperation in MultiplyByThree pipeline - pass through as-is
+        var multiplyByThreeStep = space.GetRequiredLinearStep<int, int, int>("MultiplyByThree", "MultiplyOperation");
+        var multiplyByThreeMutator = new StepMutator<Pipe<int, int>>("MultiplyByThreeMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        multiplyByThreeStep.Mutators.AddMutator(multiplyByThreeMutator, AddingMode.ExactPlace);
+
+        // Mutator for AddOperation in AddTwo pipeline - pass through as-is
+        var addTwoStep = space.GetRequiredLinearStep<int, int, int>("AddTwo", "AddOperation");
+        var addTwoMutator = new StepMutator<Pipe<int, int>>("AddTwoMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        addTwoStep.Mutators.AddMutator(addTwoMutator, AddingMode.ExactPlace);
+
+        // Mutator for MultiplyOperation in MultiplyByTwo pipeline - pass through as-is
+        var multiplyByTwoStep = space.GetRequiredLinearStep<int, int, int>("MultiplyByTwo", "MultiplyOperation");
+        var multiplyByTwoMutator = new StepMutator<Pipe<int, int>>("MultiplyByTwoMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        multiplyByTwoStep.Mutators.AddMutator(multiplyByTwoMutator, AddingMode.ExactPlace);
+
+        // Mutator for IdentityOperation in KeepZero pipeline - pass through as-is
+        var keepZeroStep = space.GetRequiredLinearStep<int, int, int>("KeepZero", "IdentityOperation");
+        var keepZeroMutator = new StepMutator<Pipe<int, int>>("KeepZeroMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        keepZeroStep.Mutators.AddMutator(keepZeroMutator, AddingMode.ExactPlace);
+
+        // Mutator for IdentityOperation in StringLengthPipeline - pass through as-is
+        var stringLengthStep = space.GetRequiredLinearStep<int, int, int>("StringLengthPipeline", "IdentityOperation");
+        var stringLengthMutator = new StepMutator<Pipe<int, int>>("StringLengthMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        stringLengthStep.Mutators.AddMutator(stringLengthMutator, AddingMode.ExactPlace);
 
         // Mutator for handler step - add 3 to all results
         var handlerStep = space.GetRequiredHandlerStep<string, int>("TestSwitchPipeline", "TestHandler");
@@ -675,12 +801,12 @@ public class WithMutationPipelineTests
     }
 
     [Theory]
-    [InlineData("123", 128, "")]             // Only digits -> first branch -> parse to int (123) + 5 = 128
-    [InlineData("  456  ", 461, "")]         // Only digits (with spaces) -> first branch -> 456 + 5 = 461
-    [InlineData("abc123def", 0, "***abcdef***")] // Mixed -> second branch -> remove digits -> add asterisks instead of spaces
-    [InlineData("hello", 0, "***hello***")]    // No digits -> second branch -> add asterisks
-    [InlineData("", 0, "******")]              // Empty -> second branch -> add asterisks
-    [InlineData("!@#", 0, "***!@#***")]        // Special chars -> second branch -> add asterisks
+    [InlineData("123", 0, "******")]         // Length 3 -> non-digit branch -> remove digits -> "" -> add *** -> "******"
+    [InlineData("  456  ", 0, "******")]     // Trimmed to "456" (length 3) -> non-digit branch -> remove digits -> "" -> add *** -> "******"
+    [InlineData("abc123def", 128, "")]        // Length 9 -> digit branch -> remove non-digits -> "123" -> parse to 123 + 5 = 128
+    [InlineData("hello", 5, "")]             // Length 5 -> digit branch -> remove non-digits -> "" -> parse fails -> 0 + 5 = 5
+    [InlineData("", 0, "******")]            // Length 0 -> non-digit branch -> remove digits -> "" -> add *** -> "******"
+    [InlineData("!@#", 0, "***!@#***")]      // Length 3 -> non-digit branch -> remove digits -> "!@#" -> add *** -> "***!@#***"
     public async Task BuildAndRunPipeline_WhenForkSplitsByDigitContent_ShouldProcessCorrectly(string inputValue, int expectedIntResult, string? expectedStringResult)
     {
         // Arrange
@@ -768,7 +894,7 @@ public class WithMutationPipelineTests
 
     private void ConfigureForkPipelineMutators(Space space)
     {
-        // Mutator for TrimString step - no change needed, just pass through
+        // Mutator for TrimString step - pass through as-is
         var trimStep = space.GetRequiredLinearStep<string, string, string>("TestForkPipeline", "TrimString");
         var trimMutator = new StepMutator<Pipe<string, string>>("TrimStringMutator", 1, (pipe) =>
         {
@@ -779,23 +905,65 @@ public class WithMutationPipelineTests
         });
         trimStep.Mutators.AddMutator(trimMutator, AddingMode.ExactPlace);
 
+        // Mutator for DigitContentFork selector - modify the fork logic
+        var forkStep = space.GetRequiredForkStep<string, string, string, string>("TestForkPipeline", "DigitContentFork");
+        var forkSelectorMutator = new StepMutator<ForkSelector<string, string, string>>("DigitContentForkMutator", 1, (selector) =>
+        {
+            return async (input, digitBranch, nonDigitBranch) =>
+            {
+                // Modified logic: strings with length > 3 go to digit branch, others to non-digit branch
+                if (input.Length > 3)
+                {
+                    await digitBranch(input);
+                }
+                else
+                {
+                    await nonDigitBranch(input);
+                }
+            };
+        });
+        forkStep.Mutators.AddMutator(forkSelectorMutator, AddingMode.ExactPlace);
+
+        // Mutator for RemoveNonDigits step in DigitProcessing - pass through as-is
+        var removeNonDigitsStep = space.GetRequiredLinearStep<string, string, string>("DigitProcessing", "RemoveNonDigits");
+        var removeNonDigitsMutator = new StepMutator<Pipe<string, string>>("RemoveNonDigitsMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        removeNonDigitsStep.Mutators.AddMutator(removeNonDigitsMutator, AddingMode.ExactPlace);
+
         // Mutator for ParseToInt step in the DigitProcessing pipeline - add 5 to the parsed value
         var parseToIntStep = space.GetRequiredLinearStep<string, string, int>("DigitProcessing", "ParseToInt");
         var parseToIntMutator = new StepMutator<Pipe<string, int>>("ParseToIntMutator", 1, (pipe) =>
         {
             return async (input, next) =>
             {
+                // Apply original parsing logic first, then add 5 to the result
                 if (int.TryParse(input, out var number))
                 {
                     await next(number + 5); // Add 5 to the parsed value
                 }
                 else
                 {
-                    await next(0);
+                    await next(0 + 5); // Even if parsing fails, add 5 to the default 0
                 }
             };
         });
         parseToIntStep.Mutators.AddMutator(parseToIntMutator, AddingMode.ExactPlace);
+
+        // Mutator for RemoveDigits step in NonDigitProcessing - pass through as-is
+        var removeDigitsStep = space.GetRequiredLinearStep<string, string, string>("NonDigitProcessing", "RemoveDigits");
+        var removeDigitsMutator = new StepMutator<Pipe<string, string>>("RemoveDigitsMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        removeDigitsStep.Mutators.AddMutator(removeDigitsMutator, AddingMode.ExactPlace);
 
         // Mutator for AddSpaces step in the NonDigitProcessing pipeline - use asterisks instead of spaces
         var addSpacesStep = space.GetRequiredLinearStep<string, string, string>("NonDigitProcessing", "AddSpaces");
@@ -809,7 +977,7 @@ public class WithMutationPipelineTests
         });
         addSpacesStep.Mutators.AddMutator(addSpacesMutator, AddingMode.ExactPlace);
 
-        // Mutator for IntHandler - no additional changes
+        // Mutator for IntHandler - pass through as-is
         var intHandlerStep = space.GetRequiredHandlerStep<string, int>("DigitProcessing", "IntHandler");
         var intHandlerMutator = new StepMutator<Handler<int>>("IntHandlerMutator", 1, (handler) =>
         {
@@ -820,7 +988,7 @@ public class WithMutationPipelineTests
         });
         intHandlerStep.Mutators.AddMutator(intHandlerMutator, AddingMode.ExactPlace);
 
-        // Mutator for StringHandler - no additional changes
+        // Mutator for StringHandler - pass through as-is
         var stringHandlerStep = space.GetRequiredHandlerStep<string, string>("NonDigitProcessing", "StringHandler");
         var stringHandlerMutator = new StepMutator<Handler<string>>("StringHandlerMutator", 1, (handler) =>
         {
@@ -833,15 +1001,15 @@ public class WithMutationPipelineTests
     }
 
     [Theory]
-    [InlineData("123", 138, "", new char[0])]             // Only digits -> first branch -> parse to int (123) + 10 + 5 = 138
-    [InlineData("  456  ", 471, "", new char[0])]         // Only digits (with spaces) -> first branch -> 456 + 10 + 5 = 471
-    [InlineData("abc", 0, "***abc***", new char[0])]      // Only letters -> second branch -> add asterisks instead of spaces
-    [InlineData("xyz", 0, "***xyz***", new char[0])]      // Only letters -> second branch -> add asterisks instead of spaces
-    [InlineData("!@#", 0, "", new char[] { '!', '@', '#', '_' })] // Only special chars -> third branch -> add underscore, remove whitespace, convert to array, remove duplicates
-    [InlineData("@@@", 0, "", new char[] { '@', '_' })]   // Special chars with duplicates -> third branch -> unique chars + underscore
-    [InlineData("a1b2", 3, "", new char[0])]              // Mixed -> default branch -> 2 digits, 2 letters -> ratio = 1 + 2 = 3
-    [InlineData("hello123", 2, "", new char[0])]          // Mixed -> default branch -> 3 digits, 5 letters -> ratio = 0 + 2 = 2
-    [InlineData("12345abc", 3, "", new char[0])]          // Mixed -> default branch -> 5 digits, 3 letters -> ratio = 1 + 2 = 3
+    [InlineData("123", 138, "", new char[0])]             // Only digits -> digit branch -> parse to int (123) + 10 + 5 = 138
+    [InlineData("  456  ", 471, "", new char[0])]         // Only digits (with spaces) -> digit branch -> 456 + 10 + 5 = 471
+    [InlineData("abc", 0, "", new char[] { 'a', 'b', 'c', '_' })]      // Only letters -> special char branch -> add underscore, remove whitespace, convert to array, remove duplicates
+    [InlineData("xyz", 0, "", new char[] { 'x', 'y', 'z', '_' })]      // Only letters -> special char branch -> add underscore, remove whitespace, convert to array, remove duplicates
+    [InlineData("!@#", 0, "", new char[] { '!', '@', '#', '_' })] // Only special chars -> special char branch -> add underscore, remove whitespace, convert to array, remove duplicates
+    [InlineData("@@@", 0, "", new char[] { '@', '_' })]   // Special chars with duplicates -> special char branch -> unique chars + underscore
+    [InlineData("a1b2", 0, "", new char[] { 'a', '1', 'b', '2', '_' })]              // Mixed -> special char branch -> add underscore, remove whitespace, convert to array, remove duplicates
+    [InlineData("hello123", 0, "", new char[] { 'h', 'e', 'l', 'o', '1', '2', '3', '_' })]          // Mixed -> special char branch -> add underscore, remove whitespace, convert to array, remove duplicates
+    [InlineData("12345abc", 0, "", new char[] { '1', '2', '3', '4', '5', 'a', 'b', 'c', '_' })]          // Mixed -> special char branch -> add underscore, remove whitespace, convert to array, remove duplicates
     public async Task BuildAndRunPipeline_WhenMultiForkClassifiesStringContent_ShouldProcessCorrectly(
         string inputValue,
         int expectedIntResult,
@@ -974,21 +1142,21 @@ public class WithMutationPipelineTests
         // Assert
         if (expectedStringResult != "")
         {
-            // Should call string handler (letter-only string)
+            // Should call string handler (letter-only string) - but this won't happen anymore with new mutator
             await stringHandler.Received().Invoke(Arg.Is(expectedStringResult!));
             await intHandler.DidNotReceive().Invoke(Arg.Any<int>());
             await charArrayHandler.DidNotReceive().Invoke(Arg.Any<char[]>());
         }
         else if (expectedCharArrayResult.Length > 0)
         {
-            // Should call char array handler (special char-only string)
+            // Should call char array handler (everything except digits-only strings)
             await charArrayHandler.Received().Invoke(Arg.Is<char[]>(arr => arr.SequenceEqual(expectedCharArrayResult)));
             await intHandler.DidNotReceive().Invoke(Arg.Any<int>());
             await stringHandler.DidNotReceive().Invoke(Arg.Any<string>());
         }
         else
         {
-            // Should call int handler (digit-only string or mixed content)
+            // Should call int handler (digit-only strings)
             await intHandler.Received().Invoke(Arg.Is(expectedIntResult));
             await stringHandler.DidNotReceive().Invoke(Arg.Any<string>());
             await charArrayHandler.DidNotReceive().Invoke(Arg.Any<char[]>());
@@ -997,7 +1165,7 @@ public class WithMutationPipelineTests
 
     private void ConfigureMultiForkPipelineMutators(Space space)
     {
-        // Mutator for TrimString step - no change needed, just pass through
+        // Mutator for TrimString step - pass through as-is
         var trimStep = space.GetRequiredLinearStep<string, string, string>("TestMultiForkPipeline", "TrimString");
         var trimMutator = new StepMutator<Pipe<string, string>>("TrimStringMutator", 1, (pipe) =>
         {
@@ -1007,6 +1175,40 @@ public class WithMutationPipelineTests
             };
         });
         trimStep.Mutators.AddMutator(trimMutator, AddingMode.ExactPlace);
+
+        // Mutator for ClassifyStringContent selector - modify the classification logic
+        var multiForkStep = space.GetRequiredMultiForkStep<string, string, string, char[]>("TestMultiForkPipeline", "ClassifyStringContent");
+        var multiForkSelectorMutator = new StepMutator<MultiForkSelector<string, string, char[]>>("ClassifyStringContentMutator", 1, (selector) =>
+        {
+            return async (input, branches, defaultNext) =>
+            {
+                // Modified logic: always treat everything as special characters unless it's digits only
+                var containsOnlyDigits = !string.IsNullOrEmpty(input) && input.All(char.IsDigit);
+
+                if (containsOnlyDigits)
+                {
+                    // Only digits go to digit branch
+                    await branches["DigitBranch"](input);
+                }
+                else
+                {
+                    // Everything else (letters, special chars, mixed) goes to special char branch
+                    await branches["SpecialCharBranch"](input);
+                }
+            };
+        });
+        multiForkStep.Mutators.AddMutator(multiForkSelectorMutator, AddingMode.ExactPlace);
+
+        // Mutator for ParseStringToInt step in DigitProcessingPipeline - pass through as-is
+        var parseStringToIntStep = space.GetRequiredLinearStep<string, string, int>("DigitProcessingPipeline", "ParseStringToInt");
+        var parseStringToIntMutator = new StepMutator<Pipe<string, int>>("ParseStringToIntMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        parseStringToIntStep.Mutators.AddMutator(parseStringToIntMutator, AddingMode.ExactPlace);
 
         // Mutator for AddConstant step in DigitProcessingPipeline - add 5 more to the result
         var addConstantStep = space.GetRequiredLinearStep<string, int, int>("DigitProcessingPipeline", "AddConstant");
@@ -1032,6 +1234,17 @@ public class WithMutationPipelineTests
         });
         addSpacesStep.Mutators.AddMutator(addSpacesMutator, AddingMode.ExactPlace);
 
+        // Mutator for RemoveWhitespace step in SpecialCharProcessingPipeline - pass through as-is
+        var removeWhitespaceStep = space.GetRequiredLinearStep<string, string, string>("SpecialCharProcessingPipeline", "RemoveWhitespace");
+        var removeWhitespaceMutator = new StepMutator<Pipe<string, string>>("RemoveWhitespaceMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        removeWhitespaceStep.Mutators.AddMutator(removeWhitespaceMutator, AddingMode.ExactPlace);
+
         // Mutator for ConvertToCharArray step in SpecialCharProcessingPipeline - add underscore
         var convertToCharArrayStep = space.GetRequiredLinearStep<string, string, char[]>("SpecialCharProcessingPipeline", "ConvertToCharArray");
         var convertToCharArrayMutator = new StepMutator<Pipe<string, char[]>>("ConvertToCharArrayMutator", 1, (pipe) =>
@@ -1044,6 +1257,28 @@ public class WithMutationPipelineTests
             };
         });
         convertToCharArrayStep.Mutators.AddMutator(convertToCharArrayMutator, AddingMode.ExactPlace);
+
+        // Mutator for RemoveDuplicates step in SpecialCharProcessingPipeline - pass through as-is
+        var removeDuplicatesStep = space.GetRequiredLinearStep<string, char[], char[]>("SpecialCharProcessingPipeline", "RemoveDuplicates");
+        var removeDuplicatesMutator = new StepMutator<Pipe<char[], char[]>>("RemoveDuplicatesMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        removeDuplicatesStep.Mutators.AddMutator(removeDuplicatesMutator, AddingMode.ExactPlace);
+
+        // Mutator for CountDigitsAndLetters step in DefaultProcessingPipeline - pass through as-is
+        var countStep = space.GetRequiredLinearStep<char[], char[], (int DigitCount, int LetterCount)>("DefaultProcessingPipeline", "CountDigitsAndLetters");
+        var countMutator = new StepMutator<Pipe<char[], (int DigitCount, int LetterCount)>>("CountDigitsAndLettersMutator", 1, (pipe) =>
+        {
+            return async (input, next) =>
+            {
+                await pipe(input, next);
+            };
+        });
+        countStep.Mutators.AddMutator(countMutator, AddingMode.ExactPlace);
 
         // Mutator for CalculateRatio step in DefaultProcessingPipeline - add 2 to the ratio
         var calculateRatioStep = space.GetRequiredLinearStep<char[], (int DigitCount, int LetterCount), int>("DefaultProcessingPipeline", "CalculateRatio");
@@ -1058,7 +1293,7 @@ public class WithMutationPipelineTests
         });
         calculateRatioStep.Mutators.AddMutator(calculateRatioMutator, AddingMode.ExactPlace);
 
-        // Mutators for handlers - no additional changes needed
+        // Mutators for handlers - pass through as-is
         var intHandlerStepDigit = space.GetRequiredHandlerStep<string, int>("DigitProcessingPipeline", "IntHandler");
         var intHandlerMutatorDigit = new StepMutator<Handler<int>>("IntHandlerMutatorDigit", 1, (handler) =>
         {

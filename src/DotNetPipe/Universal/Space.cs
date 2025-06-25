@@ -280,14 +280,14 @@ public class Space
     /// </summary>
     /// <typeparam name="TEntryStepInput">The type of the entry step input.</typeparam>
     /// <typeparam name="TInput">The type of the step input.</typeparam>
-    /// <typeparam name="TNextInput">The type of the next step input.</typeparam>
     /// <typeparam name="TIfInput">The type of the if step input.</typeparam>
+    /// <typeparam name="TNextInput">The type of the next step input.</typeparam>
     /// <param name="pipeline">The name of the pipeline.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>The if step if found and of the correct type; otherwise, null.</returns>
-    public IfStep<TEntryStepInput, TNextInput, TIfInput, TNextInput>? GetIfStep<TEntryStepInput, TInput, TNextInput, TIfInput>(string pipeline, string name)
+    public IfStep<TEntryStepInput, TInput, TIfInput, TNextInput>? GetIfStep<TEntryStepInput, TInput, TIfInput, TNextInput>(string pipeline, string name)
     {
-        if (_steps.TryGetValue(new StepName(name, pipeline), out var step) && step is IfStep<TEntryStepInput, TNextInput, TIfInput, TNextInput> pipelineIfStep)
+        if (_steps.TryGetValue(new StepName(name, pipeline), out var step) && step is IfStep<TEntryStepInput, TInput, TIfInput, TNextInput> pipelineIfStep)
         {
             return pipelineIfStep;
         }
@@ -301,22 +301,22 @@ public class Space
     /// </summary>
     /// <typeparam name="TEntryStepInput">The type of the entry step input.</typeparam>
     /// <typeparam name="TInput">The type of the step input.</typeparam>
-    /// <typeparam name="TNextInput">The type of the next step input.</typeparam>
     /// <typeparam name="TIfInput">The type of the if step input.</typeparam>
+    /// <typeparam name="TNextInput">The type of the next step input.</typeparam>
     /// <param name="pipeline">The name of the pipeline.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>The if step if found and of the correct type; otherwise, throws an exception.</returns>
     /// <exception cref="StepNotFoundException"></exception>
     /// <exception cref="UnexpectedStepTypeException"></exception>
-    public IfStep<TEntryStepInput, TNextInput, TIfInput, TNextInput> GetRequiredIfStep<TEntryStepInput, TInput, TNextInput, TIfInput>(string pipeline, string name)
+    public IfStep<TEntryStepInput, TInput, TIfInput, TNextInput> GetRequiredIfStep<TEntryStepInput, TInput, TIfInput, TNextInput>(string pipeline, string name)
     {
         if (!_steps.TryGetValue(new StepName(name, pipeline), out var step))
         {
             throw new StepNotFoundException(name);
         }
-        if (step is not IfStep<TEntryStepInput, TNextInput, TIfInput, TNextInput> pipelineIfStep)
+        if (step is not IfStep<TEntryStepInput, TInput, TIfInput, TNextInput> pipelineIfStep)
         {
-            throw new UnexpectedStepTypeException(name, step.GetType(), typeof(IfStep<TEntryStepInput, TNextInput, TIfInput, TNextInput>));
+            throw new UnexpectedStepTypeException(name, step.GetType(), typeof(IfStep<TEntryStepInput, TInput, TIfInput, TNextInput>));
         }
         return pipelineIfStep;
     }
@@ -327,15 +327,15 @@ public class Space
     /// </summary>
     /// <typeparam name="TEntryStepInput">The type of the entry step input.</typeparam>
     /// <typeparam name="TInput">The type of the step input.</typeparam>
-    /// <typeparam name="TNextInput">The type of the next step input.</typeparam>
     /// <typeparam name="TIfInput">The type of the if step input.</typeparam>
     /// <typeparam name="TElseInput">The type of the else step input.</typeparam>
+    /// <typeparam name="TNextInput">The type of the next step input.</typeparam>
     /// <param name="pipeline">The name of the pipeline.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>The if-else step if found and of the correct type; otherwise, null.</returns>
-    public IfElseStep<TEntryStepInput, TNextInput, TIfInput, TElseInput, TNextInput>? GetIfElseStep<TEntryStepInput, TInput, TNextInput, TIfInput, TElseInput>(string pipeline, string name)
+    public IfElseStep<TEntryStepInput, TInput, TIfInput, TElseInput, TNextInput>? GetIfElseStep<TEntryStepInput, TInput, TIfInput, TElseInput, TNextInput>(string pipeline, string name)
     {
-        if (_steps.TryGetValue(new StepName(name, pipeline), out var step) && step is IfElseStep<TEntryStepInput, TNextInput, TIfInput, TElseInput, TNextInput> pipelineIfElseStep)
+        if (_steps.TryGetValue(new StepName(name, pipeline), out var step) && step is IfElseStep<TEntryStepInput, TInput, TIfInput, TElseInput, TNextInput> pipelineIfElseStep)
         {
             return pipelineIfElseStep;
         }
@@ -349,23 +349,23 @@ public class Space
     /// </summary>
     /// <typeparam name="TEntryStepInput">The type of the entry step input.</typeparam>
     /// <typeparam name="TInput">The type of the step input.</typeparam>
-    /// <typeparam name="TNextInput">The type of the next step input.</typeparam>
     /// <typeparam name="TIfInput">The type of the if step input.</typeparam>
     /// <typeparam name="TElseInput">The type of the else step input.</typeparam>
+    /// <typeparam name="TNextInput">The type of the next step input.</typeparam>
     /// <param name="pipeline">The name of the pipeline.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>The if-else step if found and of the correct type; otherwise, throws an exception.</returns>
     /// <exception cref="StepNotFoundException"></exception>
     /// <exception cref="UnexpectedStepTypeException"></exception>
-    public IfElseStep<TEntryStepInput, TNextInput, TIfInput, TElseInput, TNextInput> GetRequiredIfElseStep<TEntryStepInput, TInput, TNextInput, TIfInput, TElseInput>(string pipeline, string name)
+    public IfElseStep<TEntryStepInput, TInput, TIfInput, TElseInput, TNextInput> GetRequiredIfElseStep<TEntryStepInput, TInput, TIfInput, TElseInput, TNextInput>(string pipeline, string name)
     {
         if (!_steps.TryGetValue(new StepName(name, pipeline), out var step))
         {
             throw new StepNotFoundException(name);
         }
-        if (step is not IfElseStep<TEntryStepInput, TNextInput, TIfInput, TElseInput, TNextInput> pipelineIfElseStep)
+        if (step is not IfElseStep<TEntryStepInput, TInput, TIfInput, TElseInput, TNextInput> pipelineIfElseStep)
         {
-            throw new UnexpectedStepTypeException(name, step.GetType(), typeof(IfElseStep<TInput, TNextInput, TIfInput, TElseInput, TNextInput>));
+            throw new UnexpectedStepTypeException(name, step.GetType(), typeof(IfElseStep<TEntryStepInput, TInput, TIfInput, TElseInput, TNextInput>));
         }
         return pipelineIfElseStep;
     }
