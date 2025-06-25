@@ -1,10 +1,27 @@
 namespace K1vs.DotNetPipe.Universal.Steps.LinearSteps;
 
-public sealed class PipeLinearStep<TRootStepInput, TInput, TNextInput>: LinearStep<TRootStepInput, TInput, TNextInput>
+/// <summary>
+/// Represents a linear step inside a pipeline that processes input and produces output.
+/// This step is used to create a sequence of operations where each step processes the output of the previous step.
+/// </summary>
+/// <typeparam name="TEntryStepInput"></typeparam>
+/// <typeparam name="TInput"></typeparam>
+/// <typeparam name="TNextInput"></typeparam>
+public sealed class PipeLinearStep<TEntryStepInput, TInput, TNextInput> : LinearStep<TEntryStepInput, TInput, TNextInput>
 {
-    public ReducedPipeStep<TRootStepInput, TInput> PreviousStep { get; }
+    /// <summary>
+    /// Gets the previous step in the pipeline that this linear step follows.
+    /// </summary>
+    public ReducedPipeStep<TEntryStepInput, TInput> PreviousStep { get; }
 
-    internal PipeLinearStep(ReducedPipeStep<TRootStepInput, TInput> previousStep,
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipeLinearStep{TEntryStepInput, TInput, TNextInput}"/> class.
+    /// </summary>
+    /// <param name="previousStep">The previous step in the pipeline.</param>
+    /// <param name="name">The name of the step.</param>
+    /// <param name="delegate">The delegate that processes the input and produces the output.</param>
+    /// <param name="builder">The pipeline builder that manages the pipeline construction.</param>
+    internal PipeLinearStep(ReducedPipeStep<TEntryStepInput, TInput> previousStep,
         string name,
         Pipe<TInput, TNextInput> @delegate,
         PipelineBuilder builder) : base(name, @delegate, builder)
@@ -12,7 +29,8 @@ public sealed class PipeLinearStep<TRootStepInput, TInput, TNextInput>: LinearSt
         PreviousStep = previousStep;
     }
 
-    internal override Handler<TRootStepInput> BuildHandler(Handler<TNextInput> handler)
+    /// <inheritdoc/>
+    internal override Handler<TEntryStepInput> BuildHandler(Handler<TNextInput> handler)
     {
         var pipe = CreateStepPipe();
         var resultHandler = PreviousStep.BuildHandler((input) => pipe(input, handler));

@@ -1,10 +1,29 @@
 namespace K1vs.DotNetPipe.Universal.Steps.ForkSteps;
 
-public sealed class PipeForkStep<TRootStepInput, TInput, TBranchAInput, TBranchBInput> : ForkStep<TRootStepInput, TInput, TBranchAInput, TBranchBInput>
+/// <summary>
+/// Represents a fork step pipeline a pipeline that allows branching into two separate pipelines based on a selector.
+/// </summary>
+/// typeparam name="TEntryStepInput">The type of the input for the entry step.</typeparam>
+/// typeparam name="TInput">The type of the input for the fork step.</typeparam>
+/// typeparam name="TBranchAInput">The type of the input for branch A.</typeparam>
+/// typeparam name="TBranchBInput">The type of the input for branch B.</typeparam>
+public sealed class PipeForkStep<TEntryStepInput, TInput, TBranchAInput, TBranchBInput> : ForkStep<TEntryStepInput, TInput, TBranchAInput, TBranchBInput>
 {
-    public ReducedPipeStep<TRootStepInput, TInput> PreviousStep { get; }
+    /// <summary>
+    /// Gets the previous step in the pipeline, which is the step that feeds input into this fork step.
+    /// </summary>
+    public ReducedPipeStep<TEntryStepInput, TInput> PreviousStep { get; }
 
-    internal PipeForkStep(ReducedPipeStep<TRootStepInput, TInput> previous,
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipeForkStep{TEntryStepInput, TInput, TBranchAInput, TBranchBInput}"/> class.
+    /// </summary>
+    /// <param name="previous">The previous step in the pipeline that provides input to this fork step.</param>
+    /// <param name="name">The name of the fork step.</param>
+    /// <param name="selector">The selector that determines which branch to take based on the input.</param>
+    /// <param name="branchABuilder">A function that builds the pipeline for branch A.</param>
+    /// <param name="branchBBuilder">A function that builds the pipeline for branch B.</param>
+    /// <param name="builder">The pipeline builder that contains the space and other configurations.</param>
+    internal PipeForkStep(ReducedPipeStep<TEntryStepInput, TInput> previous,
         string name,
         ForkSelector<TInput, TBranchAInput, TBranchBInput> selector,
         Func<Space, Pipeline<TBranchAInput>> branchABuilder,
@@ -15,18 +34,20 @@ public sealed class PipeForkStep<TRootStepInput, TInput, TBranchAInput, TBranchB
         PreviousStep = previous;
     }
 
-    public override Pipeline<TRootStepInput> BuildPipeline()
+    /// <inheritdoc/>
+    public override Pipeline<TEntryStepInput> BuildPipeline()
     {
-        if(PreviousStep is null)
+        if (PreviousStep is null)
         {
             throw new InvalidOperationException("Previous step is not set");
         }
-        var pipeline = new Pipeline<TRootStepInput>(Builder.Name, PreviousStep, this, BuildHandler);
+        var pipeline = new Pipeline<TEntryStepInput>(Builder.Name, PreviousStep, this, BuildHandler);
         Builder.Space.AddPipeline(pipeline);
         return pipeline;
     }
 
-    internal override Handler<TRootStepInput> BuildHandler()
+    /// <inheritdoc/>
+    internal override Handler<TEntryStepInput> BuildHandler()
     {
         var selector = CreateStepSelector();
         var trueHandler = BranchAPipeline.Compile();

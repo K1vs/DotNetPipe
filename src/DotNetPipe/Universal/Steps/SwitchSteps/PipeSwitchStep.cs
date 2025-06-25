@@ -1,10 +1,24 @@
 namespace K1vs.DotNetPipe.Universal.Steps.SwitchSteps;
 
-public sealed class PipeSwitchStep<TRootStepInput, TInput, TCaseInput, TDefaultInput, TNextStepInput> : SwitchStep<TRootStepInput, TInput, TCaseInput, TDefaultInput, TNextStepInput>
+/// <summary>
+/// Represents a step inside a pipeline that processes input and routes it to different cases based on a selector.
+/// If no case matches, it routes to a default pipeline.
+/// After branching, it continues to the next step in the pipeline.
+/// </summary>
+/// <typeparam name="TEntryStepInput">The type of the input for the entry step.</typeparam>
+/// <typeparam name="TInput">The type of the input for the switch step.</typeparam>
+/// <typeparam name="TCaseInput">The type of input for the case branches.</typeparam>
+/// <typeparam name="TDefaultInput">The type of input for the default branch.</typeparam>
+/// <typeparam name="TNextStepInput">The type of input for the next step after the switch step.</typeparam>
+public sealed class PipeSwitchStep<TEntryStepInput, TInput, TCaseInput, TDefaultInput, TNextStepInput> : SwitchStep<TEntryStepInput, TInput, TCaseInput, TDefaultInput, TNextStepInput>
 {
-    public ReducedPipeStep<TRootStepInput, TInput> PreviousStep { get; }
+    /// <summary>
+    /// Gets the previous step in the pipeline before this switch step.
+    /// </summary>
+    public ReducedPipeStep<TEntryStepInput, TInput> PreviousStep { get; }
 
-    internal PipeSwitchStep(ReducedPipeStep<TRootStepInput, TInput> previousStep,
+    /// <inheritdoc/>
+    internal PipeSwitchStep(ReducedPipeStep<TEntryStepInput, TInput> previousStep,
         string name,
         SwitchSelector<TInput, TCaseInput, TDefaultInput> selector,
         Func<Space, IReadOnlyDictionary<string, OpenPipeline<TCaseInput, TNextStepInput>>> caseBuilder,
@@ -15,7 +29,8 @@ public sealed class PipeSwitchStep<TRootStepInput, TInput, TCaseInput, TDefaultI
         PreviousStep = previousStep;
     }
 
-    internal override Handler<TRootStepInput> BuildHandler(Handler<TNextStepInput> handler)
+    /// <inheritdoc/>
+    internal override Handler<TEntryStepInput> BuildHandler(Handler<TNextStepInput> handler)
     {
         var selector = CreateStepSelector();
         var casesHandlers = CasesPipelines.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.BuildHandler(handler)).AsReadOnly();

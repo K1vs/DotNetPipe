@@ -1,10 +1,29 @@
 namespace K1vs.DotNetPipe.Universal.Steps.MultiForkSteps;
 
-public sealed class PipeMultiForkStep<TRootStepInput, TInput, TBranchesInput, TDefaultInput> : MultiForkStep<TRootStepInput, TInput, TBranchesInput, TDefaultInput>
+/// <summary>
+/// Represents a step inside a pipeline that allows for multiple branches based on a selector.
+/// </summary>
+/// <typeparam name="TEntryStepInput">The type of the input for the entry step.</typeparam>
+/// <typeparam name="TInput">The type of the input for the multi-fork step.</typeparam>
+/// <typeparam name="TBranchesInput">The type of input for the branches.</typeparam>
+/// <typeparam name="TDefaultInput">The type of input for the default branch.</typeparam>
+public sealed class PipeMultiForkStep<TEntryStepInput, TInput, TBranchesInput, TDefaultInput> : MultiForkStep<TEntryStepInput, TInput, TBranchesInput, TDefaultInput>
 {
-    public ReducedPipeStep<TRootStepInput, TInput> PreviousStep { get; }
+    /// <summary>
+    /// Gets the previous step in the pipeline that leads to this multi-fork step.
+    /// </summary>
+    public ReducedPipeStep<TEntryStepInput, TInput> PreviousStep { get; }
 
-    internal PipeMultiForkStep(ReducedPipeStep<TRootStepInput, TInput> previous,
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipeMultiForkStep{TEntryStepInput, TInput, TBranchesInput, TDefaultInput}"/> class.
+    /// </summary>
+    /// <param name="previous">The previous step in the pipeline.</param>
+    /// <param name="name">The name of the step.</param>
+    /// <param name="selector">The selector that determines which branch to take.</param>
+    /// <param name="branchesBuilder">A function that builds the pipelines for the branches.</param>
+    /// <param name="defaultBranchBuilder">A function that builds the pipeline for the default branch.</param>
+    /// <param name="builder">The pipeline builder that manages the pipeline construction.</param>
+    internal PipeMultiForkStep(ReducedPipeStep<TEntryStepInput, TInput> previous,
         string name,
         MultiForkSelector<TInput, TBranchesInput, TDefaultInput> selector,
         Func<Space, IReadOnlyDictionary<string, Pipeline<TBranchesInput>>> branchesBuilder,
@@ -15,16 +34,18 @@ public sealed class PipeMultiForkStep<TRootStepInput, TInput, TBranchesInput, TD
         PreviousStep = previous;
     }
 
-    public override Pipeline<TRootStepInput> BuildPipeline()
+    /// <inheritdoc/>
+    public override Pipeline<TEntryStepInput> BuildPipeline()
     {
-        if(PreviousStep is null)
+        if (PreviousStep is null)
         {
             throw new InvalidOperationException("Previous step is not set");
         }
-        return new Pipeline<TRootStepInput>(Builder.Name, PreviousStep, this, BuildHandler);
+        return new Pipeline<TEntryStepInput>(Builder.Name, PreviousStep, this, BuildHandler);
     }
 
-    internal override Handler<TRootStepInput> BuildHandler()
+    /// <inheritdoc/>
+    internal override Handler<TEntryStepInput> BuildHandler()
     {
         var selector = CreateStepSelector();
         var branches = Branches.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Compile()).AsReadOnly();

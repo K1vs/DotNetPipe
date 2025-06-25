@@ -2,6 +2,13 @@ using K1vs.DotNetPipe.Universal.Steps;
 
 namespace K1vs.DotNetPipe.Universal;
 
+/// <summary>
+/// Represents a pipeline in the DotNetPipe framework.
+/// A pipeline consists of a series of steps that process input data sequentially.
+/// Each pipeline has an entry step where processing begins and a last step that concludes the processing.
+/// Pipelines can be open, allowing integrate it in another pipeline as a sub-pipeline in if, ifelse or switch step.
+/// Otherwise, it can be called directly or can be integrated in another pipeline as a sub-pipeline in fork or multifork step.
+/// </summary>
 public interface IPipeline
 {
     /// <summary>

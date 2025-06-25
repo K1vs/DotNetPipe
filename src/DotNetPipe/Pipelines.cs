@@ -1,7 +1,20 @@
 namespace K1vs.DotNetPipe;
 
+/// <summary>
+/// Provides methods to create pipelines and spaces.
+/// Pipelines are used to process data in a structured manner, allowing for the addition of steps
+/// to the pipeline that can transform or handle the data in various ways.
+/// Pipelines behavior can be modified using mutators, which can change the way steps are executed or how data is processed.
+/// </summary>
 public static class Pipelines
 {
+    /// <summary>
+    /// Creates a new pipeline with the specified name.
+    /// The pipeline is created within a new space, which is a container for pipelines and their steps.
+    /// </summary>
+    /// <typeparam name="TInput">The type of the input data for the pipeline.</typeparam>
+    /// <param name="name">The name of the pipeline.</param>
+    /// <returns>A new pipeline entry.</returns>
     public static Universal.PipelineEntry<TInput> CreatePipeline<TInput>(string name)
     {
         var space = new Universal.Space();
@@ -9,6 +22,12 @@ public static class Pipelines
         return pipeline;
     }
 
+    /// <summary>
+    /// Creates a space for pipelines.
+    /// A space is a container for pipelines and their steps, allowing for organized management of multiple pipelines.
+    /// Each space can contain multiple pipelines, and each pipeline can have multiple steps.
+    /// </summary>
+    /// <returns></returns>
     public static Universal.Space CreateSpace()
     {
         return new Universal.Space();
