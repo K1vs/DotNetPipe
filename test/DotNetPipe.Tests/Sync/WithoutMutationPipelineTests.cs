@@ -1,8 +1,8 @@
 ﻿using NSubstitute;
-using K1vs.DotNetPipe.Universal;
+using K1vs.DotNetPipe.Sync;
 using System.Linq;
 
-namespace K1vs.DotNetPipe.Tests.Universal;
+namespace K1vs.DotNetPipe.Tests.Sync;
 
 public class WithoutMutationPipelineTests
 {
@@ -10,44 +10,44 @@ public class WithoutMutationPipelineTests
     [InlineData(-4)]
     [InlineData(0)]
     [InlineData(2)]
-    public async Task BuildAndRunPipeline_WhenOneHandlerStep_ShouldRun(int value)
+    public void BuildAndRunPipeline_WhenOneHandlerStep_ShouldRun(int value)
     {
         // Arrange
         var handler = Substitute.For<Func<int, ValueTask>>();
         handler.Invoke(Arg.Is(value)).Returns(ValueTask.CompletedTask);
-        var pipeline = Pipelines.CreatePipeline<int>("TestPipeline")
+        var pipeline = Pipelines.CreateSyncPipeline<int>("TestPipeline")
             .StartWithHandler("TestHandler", async (input) => await handler(input))
             .BuildPipeline().Compile();
         // Act
-        await pipeline(value);
+        pipeline(value);
         // Assert
-        await handler.Received().Invoke(Arg.Is(value));
+        handler.Received().Invoke(Arg.Is(value));
     }
 
     [Theory]
     [InlineData(-4, 5, 1)]
     [InlineData(0, 10, 10)]
     [InlineData(2, 3, 5)]
-    public async Task BuildAndRunPipeline_WhenLinearStepThenHandlerStep_ShouldRun(int inputValue, int constantToAdd, int expectedHandlerInput)
+    public void BuildAndRunPipeline_WhenLinearStepThenHandlerStep_ShouldRun(int inputValue, int constantToAdd, int expectedHandlerInput)
     {
         // Arrange
-        var handler = Substitute.For<Func<int, ValueTask>>();
-        handler.Invoke(Arg.Is(expectedHandlerInput)).Returns(ValueTask.CompletedTask);
+        var handler = Substitute.For<Action<int>>();
+        handler.Invoke(Arg.Is(expectedHandlerInput));
 
-        var pipeline = Pipelines.CreatePipeline<int>("TestTwoStepPipeline")
-            .StartWithLinear<int>("AddConstant", async (input, next) =>
+        var pipeline = Pipelines.CreateSyncPipeline<int>("TestTwoStepPipeline")
+            .StartWithLinear<int>("AddConstant", (input, next) =>
             {
                 var result = input + constantToAdd;
-                await next(result);
+                next(result);
             })
-            .HandleWith("TestHandler", async (input) => await handler(input))
+            .HandleWith("TestHandler", (input) => handler(input))
             .BuildPipeline().Compile();
 
         // Act
-        await pipeline(inputValue);
+        pipeline(inputValue);
 
         // Assert
-        await handler.Received().Invoke(Arg.Is(expectedHandlerInput));
+        handler.Received().Invoke(Arg.Is(expectedHandlerInput));
     }
 
     [Theory]
@@ -55,31 +55,31 @@ public class WithoutMutationPipelineTests
     [InlineData(0, 5, 3, 15)]  // (0 + 5) * 3 = 15
     [InlineData(-1, 4, 2, 6)]  // (-1 + 4) * 2 = 6
     [InlineData(10, -5, 4, 20)] // (10 + (-5)) * 4 = 20
-    public async Task BuildAndRunPipeline_WhenTwoLinearStepsThenHandlerStep_ShouldRun(int inputValue, int constantToAdd, int multiplier, int expectedHandlerInput)
+    public void BuildAndRunPipeline_WhenTwoLinearStepsThenHandlerStep_ShouldRun(int inputValue, int constantToAdd, int multiplier, int expectedHandlerInput)
     {
         // Arrange
-        var handler = Substitute.For<Func<int, ValueTask>>();
-        handler.Invoke(Arg.Is(expectedHandlerInput)).Returns(ValueTask.CompletedTask);
+        var handler = Substitute.For<Action<int>>();
+        handler.Invoke(Arg.Is(expectedHandlerInput));
 
-        var pipeline = Pipelines.CreatePipeline<int>("TestThreeStepPipeline")
-            .StartWithLinear<int>("AddConstant", async (input, next) =>
+        var pipeline = Pipelines.CreateSyncPipeline<int>("TestThreeStepPipeline")
+            .StartWithLinear<int>("AddConstant", (input, next) =>
             {
                 var result = input + constantToAdd;
-                await next(result);
+                next(result);
             })
-            .ThenLinear<int>("MultiplyByCoefficient", async (input, next) =>
+            .ThenLinear<int>("MultiplyByCoefficient", (input, next) =>
             {
                 var result = input * multiplier;
-                await next(result);
+                next(result);
             })
-            .HandleWith("TestHandler", async (input) => await handler(input))
+            .HandleWith("TestHandler", (input) => handler(input))
             .BuildPipeline().Compile();
 
         // Act
-        await pipeline(inputValue);
+        pipeline(inputValue);
 
         // Assert
-        await handler.Received().Invoke(Arg.Is(expectedHandlerInput));
+        handler.Received().Invoke(Arg.Is(expectedHandlerInput));
     }
 
     [Theory]
@@ -88,40 +88,40 @@ public class WithoutMutationPipelineTests
     [InlineData("0", 5, 5)]    // "0" -> 0, 0 + 5 = 5
     [InlineData("abc", 3, 0)]  // "abc" -> doesn't parse, handler not called
     [InlineData("", 10, 0)]    // "" -> doesn't parse, handler not called
-    public async Task BuildAndRunPipeline_WhenStringParseAndAddConstant_ShouldCallHandlerOnlyOnSuccessfulParse(string inputValue, int constantToAdd, int expectedCallCount)
+    public void BuildAndRunPipeline_WhenStringParseAndAddConstant_ShouldCallHandlerOnlyOnSuccessfulParse(string inputValue, int constantToAdd, int expectedCallCount)
     {
         // Arrange
-        var handler = Substitute.For<Func<int, ValueTask>>();
-        handler.Invoke(Arg.Any<int>()).Returns(ValueTask.CompletedTask);
+        var handler = Substitute.For<Action<int>>();
+        handler.Invoke(Arg.Any<int>());
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestStringParsingPipeline")
-            .StartWithLinear<int>("ParseString", async (input, next) =>
+        var pipeline = Pipelines.CreateSyncPipeline<string>("TestStringParsingPipeline")
+            .StartWithLinear<int>("ParseString", (input, next) =>
             {
                 if (int.TryParse(input, out var parsed))
                 {
-                    await next(parsed);
+                    next(parsed);
                 }
                 // If doesn't parse - don't call next
             })
-            .ThenLinear<int>("AddConstant", async (input, next) =>
+            .ThenLinear<int>("AddConstant", (input, next) =>
             {
                 var result = input + constantToAdd;
-                await next(result);
+                next(result);
             })
-            .HandleWith("TestHandler", async (input) => await handler(input))
+            .HandleWith("TestHandler", (input) => handler(input))
             .BuildPipeline().Compile();
 
         // Act
-        await pipeline(inputValue);
+        pipeline(inputValue);
 
         // Assert
         if (expectedCallCount > 0)
         {
-            await handler.Received().Invoke(Arg.Is(expectedCallCount));
+            handler.Received().Invoke(Arg.Is(expectedCallCount));
         }
         else
         {
-            await handler.DidNotReceive().Invoke(Arg.Any<int>());
+            handler.DidNotReceive().Invoke(Arg.Any<int>());
         }
     }
 
@@ -131,58 +131,58 @@ public class WithoutMutationPipelineTests
     [InlineData("3.7", 5, 9)]       // "3.7" -> trim -> 3.7 (float) -> round to 4 -> 4 + 5 = 9
     [InlineData(" 2.3 ", 1, 3)]     // " 2.3 " -> trim -> 2.3 (float) -> round to 2 -> 2 + 1 = 3
     [InlineData("5.5", 2, 8)]       // "5.5" -> trim -> 5.5 (float) -> round to 6 -> 6 + 2 = 8
-    public async Task BuildAndRunPipeline_WhenIfStepHandlesIntAndFloat_ShouldProcessCorrectly(string inputValue, int constantToAdd, int expectedResult)
+    public void BuildAndRunPipeline_WhenIfStepHandlesIntAndFloat_ShouldProcessCorrectly(string inputValue, int constantToAdd, int expectedResult)
     {
         // Arrange
-        var handler = Substitute.For<Func<int, ValueTask>>();
-        handler.Invoke(Arg.Is(expectedResult)).Returns(ValueTask.CompletedTask);
+        var handler = Substitute.For<Action<int>>();
+        handler.Invoke(Arg.Is(expectedResult));
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestIfStepPipeline")
-            .StartWithLinear<string>("TrimString", async (input, next) =>
+        var pipeline = Pipelines.CreateSyncPipeline<string>("TestIfStepPipeline")
+            .StartWithLinear<string>("TrimString", (input, next) =>
             {
                 var trimmed = input.Trim();
-                await next(trimmed);
+                next(trimmed);
             })
-            .ThenIf<string, int>("CheckIntOrFloat", async (input, conditionalNext, next) =>
+            .ThenIf<string, int>("CheckIntOrFloat", (input, conditionalNext, next) =>
             {
                 // Try to parse as int first
                 if (int.TryParse(input, out var intValue))
                 {
                     // If it's an int, continue with main pipeline
-                    await next(intValue);
+                    next(intValue);
                 }
                 else
                 {
                     // If not an int, go to conditional pipeline (for float parsing)
-                    await conditionalNext(input);
+                    conditionalNext(input);
                 }
             }, space => space.CreatePipeline<string>("FloatProcessing")
-                .StartWithLinear<double>("ParseFloat", async (input, next) =>
+                .StartWithLinear<double>("ParseFloat", (input, next) =>
                 {
                     if (double.TryParse(input, out var floatValue))
                     {
-                        await next(floatValue);
+                        next(floatValue);
                     }
                 })
-                .ThenLinear<int>("RoundToInt", async (input, next) =>
+                .ThenLinear<int>("RoundToInt", (input, next) =>
                 {
                     var rounded = (int)Math.Round(input);
-                    await next(rounded);
+                    next(rounded);
                 })
                 .BuildOpenPipeline())
-            .ThenLinear<int>("AddConstant", async (input, next) =>
+            .ThenLinear<int>("AddConstant", (input, next) =>
             {
                 var result = input + constantToAdd;
-                await next(result);
+                next(result);
             })
-            .HandleWith("TestHandler", async (input) => await handler(input))
+            .HandleWith("TestHandler", (input) => handler(input))
             .BuildPipeline().Compile();
 
         // Act
-        await pipeline(inputValue);
+        pipeline(inputValue);
 
         // Assert
-        await handler.Received().Invoke(Arg.Is(expectedResult));
+        handler.Received().Invoke(Arg.Is(expectedResult));
     }
 
     [Theory]
@@ -191,70 +191,70 @@ public class WithoutMutationPipelineTests
     [InlineData("3.7", 5, 3, 9)]       // "3.7" -> trim -> 3.7 (float) -> true branch -> round to 4 -> 4 + 5 = 9
     [InlineData(" 2.3 ", 1, 5, 3)]     // " 2.3 " -> trim -> 2.3 (float) -> true branch -> round to 2 -> 2 + 1 = 3
     [InlineData("5.5", 2, 7, 8)]       // "5.5" -> trim -> 5.5 (float) -> true branch -> round to 6 -> 6 + 2 = 8
-    public async Task BuildAndRunPipeline_WhenIfElseStepHandlesIntFloatOrDefault_ShouldProcessCorrectly(string inputValue, int constantToAdd, int multiplier, int expectedResult)
+    public void BuildAndRunPipeline_WhenIfElseStepHandlesIntFloatOrDefault_ShouldProcessCorrectly(string inputValue, int constantToAdd, int multiplier, int expectedResult)
     {
         // Arrange
-        var handler = Substitute.For<Func<int, ValueTask>>();
-        handler.Invoke(Arg.Is(expectedResult)).Returns(ValueTask.CompletedTask);
+        var handler = Substitute.For<Action<int>>();
+        handler.Invoke(Arg.Is(expectedResult));
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestIfElseStepPipeline")
-            .StartWithLinear<string>("TrimString", async (input, next) =>
+        var pipeline = Pipelines.CreateSyncPipeline<string>("TestIfElseStepPipeline")
+            .StartWithLinear<string>("TrimString", (input, next) =>
             {
                 var trimmed = input.Trim();
-                await next(trimmed);
+                next(trimmed);
             })
-            .ThenIfElse<string, int, int>("CheckIntOrFloat", async (input, trueNext, falseNext) =>
+            .ThenIfElse<string, int, int>("CheckIntOrFloat", (input, trueNext, falseNext) =>
             {
                 // Try to parse as int first
                 if (int.TryParse(input, out var intValue))
                 {
                     // If it's an int, we actually want to bypass both branches and continue directly
                     // But since IfElse requires going through one of the branches, we'll use false branch for int
-                    await falseNext(intValue);
+                    falseNext(intValue);
                 }
                 else
                 {
                     // If not an int, go to true branch (for float parsing)
-                    await trueNext(input);
+                    trueNext(input);
                 }
             },
             // True branch - float processing
             space => space.CreatePipeline<string>("FloatProcessing")
-                .StartWithLinear<double>("ParseFloat", async (input, next) =>
+                .StartWithLinear<double>("ParseFloat", (input, next) =>
                 {
                     if (double.TryParse(input, out var floatValue))
                     {
-                        await next(floatValue);
+                        next(floatValue);
                     }
                 })
-                .ThenLinear<int>("RoundToInt", async (input, next) =>
+                .ThenLinear<int>("RoundToInt", (input, next) =>
                 {
                     var rounded = (int)Math.Round(input);
-                    await next(rounded);
+                    next(rounded);
                 })
                 .BuildOpenPipeline(),
             // False branch - multiply by multiplier
             space => space.CreatePipeline<int>("IntOrDefaultProcessing")
-                .StartWithLinear<int>("ParseIntOrDefault", async (input, next) =>
+                .StartWithLinear<int>("ParseIntOrDefault", (input, next) =>
                 {
                     // If we got here, it means we parsed as int in the false branch
                     // So we just pass it through
-                    await next(input * multiplier);
+                    next(input * multiplier);
                 })
                 .BuildOpenPipeline())
-            .ThenLinear<int>("AddConstant", async (input, next) =>
+            .ThenLinear<int>("AddConstant", (input, next) =>
             {
                 var result = input + constantToAdd;
-                await next(result);
+                next(result);
             })
-            .HandleWith("TestHandler", async (input) => await handler(input))
+            .HandleWith("TestHandler", (input) => handler(input))
             .BuildPipeline().Compile();
 
         // Act
-        await pipeline(inputValue);
+        pipeline(inputValue);
 
         // Assert
-        await handler.Received().Invoke(Arg.Is(expectedResult));
+        handler.Received().Invoke(Arg.Is(expectedResult));
     }
 
     [Theory]
@@ -265,94 +265,94 @@ public class WithoutMutationPipelineTests
     [InlineData("abc", 3)]      // not a number -> string length = 3
     [InlineData("hello", 5)]    // not a number -> string length = 5
     [InlineData("", 0)]         // empty string -> length = 0
-    public async Task BuildAndRunPipeline_WhenSwitchStepRoutesByNumberRange_ShouldProcessCorrectly(string inputValue, int expectedResult)
+    public void BuildAndRunPipeline_WhenSwitchStepRoutesByNumberRange_ShouldProcessCorrectly(string inputValue, int expectedResult)
     {
         // Arrange
-        var handler = Substitute.For<Func<int, ValueTask>>();
-        handler.Invoke(Arg.Is(expectedResult)).Returns(ValueTask.CompletedTask);
+        var handler = Substitute.For<Action<int>>();
+        handler.Invoke(Arg.Is(expectedResult));
 
-        var space = Pipelines.CreateSpace();
+        var space = Pipelines.CreateSyncSpace();
         var defaultPipeline = space.CreatePipeline<int>("StringLengthPipeline")
-            .StartWithLinear<int>("IdentityOperation", async (input, next) =>
+            .StartWithLinear<int>("IdentityOperation", (input, next) =>
             {
-                await next(input); // Use string length as-is
+                next(input); // Use string length as-is
             })
             .BuildOpenPipeline();
 
         var pipeline = space.CreatePipeline<string>("TestSwitchPipeline")
-            .StartWithLinear<string>("TrimString", async (input, next) =>
+            .StartWithLinear<string>("TrimString", (input, next) =>
             {
                 var trimmed = input.Trim();
-                await next(trimmed);
+                next(trimmed);
             })
-            .ThenSwitch<int, int, int>("NumberRangeSwitch", async (input, cases, defaultNext) =>
+            .ThenSwitch<int, int, int>("NumberRangeSwitch", (input, cases, defaultNext) =>
             {
                 // Try to parse as integer
                 if (int.TryParse(input, out var number))
                 {
                     if (number > 100)
                     {
-                        await cases["GreaterThan100"](number);
+                        cases["GreaterThan100"](number);
                     }
                     else if (number > 0)
                     {
-                        await cases["BetweenZeroAndHundred"](number);
+                        cases["BetweenZeroAndHundred"](number);
                     }
                     else if (number < 0)
                     {
-                        await cases["LessThanZero"](number);
+                        cases["LessThanZero"](number);
                     }
                     else // number == 0
                     {
-                        await cases["EqualToZero"](number);
+                        cases["EqualToZero"](number);
                     }
                 }
                 else
                 {
                     // If not a number, use string length
                     var stringLength = input.Length;
-                    await defaultNext(stringLength);
+                    defaultNext(stringLength);
                 }
             },
             space => new Dictionary<string, OpenPipeline<int, int>>
             {
                 ["GreaterThan100"] = space.CreatePipeline<int>("MultiplyByThree")
-                    .StartWithLinear<int>("MultiplyOperation", async (input, next) =>
+                    .StartWithLinear<int>("MultiplyOperation", (input, next) =>
                     {
                         var result = input * 3;
-                        await next(result);
+                        next(result);
                     })
                     .BuildOpenPipeline(),
                 ["BetweenZeroAndHundred"] = space.CreatePipeline<int>("AddTwo")
-                    .StartWithLinear<int>("AddOperation", async (input, next) =>
+                    .StartWithLinear<int>("AddOperation", (input, next) =>
                     {
                         var result = input + 2;
-                        await next(result);
+                        next(result);
                     })
                     .BuildOpenPipeline(),
                 ["LessThanZero"] = space.CreatePipeline<int>("MultiplyByTwo")
-                    .StartWithLinear<int>("MultiplyOperation", async (input, next) =>
+                    .StartWithLinear<int>("MultiplyOperation", (input, next) =>
                     {
                         var result = input * 2;
-                        await next(result);
+                        next(result);
                     })
                     .BuildOpenPipeline(),
                 ["EqualToZero"] = space.CreatePipeline<int>("KeepZero")
-                    .StartWithLinear<int>("IdentityOperation", async (input, next) =>
+                    .StartWithLinear<int>("IdentityOperation", (input, next) =>
                     {
-                        await next(input); // Keep the same value (0)
+                        next(input); // Keep the same value (0)
                     })
                     .BuildOpenPipeline()
             }.AsReadOnly(),
             defaultPipeline)
-            .HandleWith("TestHandler", async (input) => await handler(input))
+            .HandleWith("TestHandler", (input) => handler(input))
             .BuildPipeline().Compile();
 
         // Act
-        await pipeline(inputValue);
+        pipeline(inputValue);
 
         // Assert
-        await handler.Received().Invoke(Arg.Is(expectedResult));
+        handler.Received().Invoke(Arg.Is(expectedResult));
     }
 
     [Theory]
@@ -362,85 +362,85 @@ public class WithoutMutationPipelineTests
     [InlineData("hello", 0, "  hello  ")]    // No digits -> second branch -> add spaces
     [InlineData("", 0, "    ")]              // Empty -> second branch -> add spaces
     [InlineData("!@#", 0, "  !@#  ")]        // Special chars -> second branch -> add spaces
-    public async Task BuildAndRunPipeline_WhenForkSplitsByDigitContent_ShouldProcessCorrectly(string inputValue, int expectedIntResult, string? expectedStringResult)
+    public void BuildAndRunPipeline_WhenForkSplitsByDigitContent_ShouldProcessCorrectly(string inputValue, int expectedIntResult, string? expectedStringResult)
     {
         // Arrange
-        var intHandler = Substitute.For<Func<int, ValueTask>>();
-        var stringHandler = Substitute.For<Func<string, ValueTask>>();
-        intHandler.Invoke(Arg.Any<int>()).Returns(ValueTask.CompletedTask);
-        stringHandler.Invoke(Arg.Any<string>()).Returns(ValueTask.CompletedTask);
+        var intHandler = Substitute.For<Action<int>>();
+        var stringHandler = Substitute.For<Action<string>>();
+        intHandler.Invoke(Arg.Any<int>());
+        stringHandler.Invoke(Arg.Any<string>());
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestForkPipeline")
-            .StartWithLinear<string>("TrimString", async (input, next) =>
+        var pipeline = Pipelines.CreateSyncPipeline<string>("TestForkPipeline")
+            .StartWithLinear<string>("TrimString", (input, next) =>
             {
                 var trimmed = input.Trim();
-                await next(trimmed);
+                next(trimmed);
             })
-            .ThenFork<string, string>("DigitContentFork", async (input, digitBranch, nonDigitBranch) =>
+            .ThenFork<string, string>("DigitContentFork", (input, digitBranch, nonDigitBranch) =>
             {
                 // Check if string contains only digits (after trimming)
                 var containsOnlyDigits = !string.IsNullOrEmpty(input) && input.All(char.IsDigit);
 
                 if (containsOnlyDigits)
                 {
-                    await digitBranch(input);
+                    digitBranch(input);
                 }
                 else
                 {
-                    await nonDigitBranch(input);
+                    nonDigitBranch(input);
                 }
             },
             // Digit processing branch
             space => space.CreatePipeline<string>("DigitProcessing")
-                .StartWithLinear<string>("RemoveNonDigits", async (input, next) =>
+                .StartWithLinear<string>("RemoveNonDigits", (input, next) =>
                 {
                     var digitsOnly = new string(input.Where(char.IsDigit).ToArray());
-                    await next(digitsOnly);
+                    next(digitsOnly);
                 })
-                .ThenLinear<int>("ParseToInt", async (input, next) =>
+                .ThenLinear<int>("ParseToInt", (input, next) =>
                 {
                     if (int.TryParse(input, out var number))
                     {
-                        await next(number);
+                        next(number);
                     }
                     else
                     {
-                        await next(0); // Default to 0 if parsing fails
+                        next(0); // Default to 0 if parsing fails
                     }
                 })
-                .HandleWith("IntHandler", async (input) => await intHandler(input))
+                .HandleWith("IntHandler", (input) => intHandler(input))
                 .BuildPipeline(),
             // Non-digit processing branch
             space => space.CreatePipeline<string>("NonDigitProcessing")
-                .StartWithLinear<string>("RemoveDigits", async (input, next) =>
+                .StartWithLinear<string>("RemoveDigits", (input, next) =>
                 {
                     var nonDigitsOnly = new string(input.Where(c => !char.IsDigit(c)).ToArray());
-                    await next(nonDigitsOnly);
+                    next(nonDigitsOnly);
                 })
-                .ThenLinear<string>("AddSpaces", async (input, next) =>
+                .ThenLinear<string>("AddSpaces", (input, next) =>
                 {
                     var withSpaces = $"  {input}  ";
-                    await next(withSpaces);
+                    next(withSpaces);
                 })
-                .HandleWith("StringHandler", async (input) => await stringHandler(input))
+                .HandleWith("StringHandler", (input) => stringHandler(input))
                 .BuildPipeline())
             .BuildPipeline().Compile();
 
         // Act
-        await pipeline(inputValue);
+        pipeline(inputValue);
 
         // Assert
         if (expectedStringResult == "")
         {
             // Should call int handler (digit-only string)
-            await intHandler.Received().Invoke(Arg.Is(expectedIntResult));
-            await stringHandler.DidNotReceive().Invoke(Arg.Any<string>());
+            intHandler.Received().Invoke(Arg.Is(expectedIntResult));
+            stringHandler.DidNotReceive().Invoke(Arg.Any<string>());
         }
         else
         {
             // Should call string handler (non-digit string)
-            await stringHandler.Received().Invoke(Arg.Is(expectedStringResult!));
-            await intHandler.DidNotReceive().Invoke(Arg.Any<int>());
+            stringHandler.Received().Invoke(Arg.Is(expectedStringResult!));
+            intHandler.DidNotReceive().Invoke(Arg.Any<int>());
         }
     }
 
@@ -453,93 +453,94 @@ public class WithoutMutationPipelineTests
     [InlineData("@@@", 0, "", new char[] { '@' })]        // Special chars with duplicates -> third branch -> unique chars only    [InlineData("a1b2", 1, "", new char[0])]              // Mixed -> default branch -> 2 digits, 2 letters -> ratio = 1
     [InlineData("hello123", 0, "", new char[0])]          // Mixed -> default branch -> 3 digits, 5 letters -> ratio = 0 (floor)
     [InlineData("12345abc", 1, "", new char[0])]          // Mixed -> default branch -> 5 digits, 3 letters -> ratio = 1 (floor)
-    public async Task BuildAndRunPipeline_WhenMultiForkClassifiesStringContent_ShouldProcessCorrectly(
+    public void BuildAndRunPipeline_WhenMultiForkClassifiesStringContent_ShouldProcessCorrectly(
         string inputValue,
         int expectedIntResult,
         string? expectedStringResult,
         char[] expectedCharArrayResult)
     {
         // Arrange
-        var intHandler = Substitute.For<Func<int, ValueTask>>();
-        var stringHandler = Substitute.For<Func<string, ValueTask>>();
-        var charArrayHandler = Substitute.For<Func<char[], ValueTask>>();
+        var intHandler = Substitute.For<Action<int>>();
+        var stringHandler = Substitute.For<Action<string>>();
+        var charArrayHandler = Substitute.For<Action<char[]>>();
 
-        intHandler.Invoke(Arg.Any<int>()).Returns(ValueTask.CompletedTask);
-        stringHandler.Invoke(Arg.Any<string>()).Returns(ValueTask.CompletedTask);
-        charArrayHandler.Invoke(Arg.Any<char[]>()).Returns(ValueTask.CompletedTask);
+        intHandler.Invoke(Arg.Any<int>());
+        stringHandler.Invoke(Arg.Any<string>());
+        charArrayHandler.Invoke(Arg.Any<char[]>());
 
-        var space = Pipelines.CreateSpace();
+        var space = Pipelines.CreateSyncSpace();
 
         // Create sub-pipelines before main pipeline
         space.CreatePipeline<string>("DigitProcessingPipeline")
-            .StartWithLinear<int>("ParseStringToInt", async (input, next) =>
+            .StartWithLinear<int>("ParseStringToInt", (input, next) =>
             {
                 if (int.TryParse(input, out var number))
                 {
-                    await next(number);
+                    next(number);
                 }
                 else
                 {
-                    await next(0); // Default value if parsing fails
+                    next(0); // Default value if parsing fails
                 }
             })
-            .ThenLinear<int>("AddConstant", async (input, next) =>
+            .ThenLinear<int>("AddConstant", (input, next) =>
             {
                 var result = input + 10; // Add constant 10
-                await next(result);
+                next(result);
             })
-            .HandleWith("IntHandler", async (input) => await intHandler(input))
+            .HandleWith("IntHandler", (input) => intHandler(input))
             .BuildPipeline();
 
         space.CreatePipeline<string>("LetterProcessingPipeline")
-            .StartWithLinear<string>("AddSpaces", async (input, next) =>
+            .StartWithLinear<string>("AddSpaces", (input, next) =>
             {
                 var withSpaces = $"  {input}  ";
-                await next(withSpaces);
+                next(withSpaces);
             })
-            .HandleWith("StringHandler", async (input) => await stringHandler(input))
+            .HandleWith("StringHandler", (input) => stringHandler(input))
             .BuildPipeline();
 
         space.CreatePipeline<string>("SpecialCharProcessingPipeline")
-            .StartWithLinear<string>("RemoveWhitespace", async (input, next) =>
+            .StartWithLinear<string>("RemoveWhitespace", (input, next) =>
             {
                 var noWhitespace = new string(input.Where(c => !char.IsWhiteSpace(c)).ToArray());
-                await next(noWhitespace);
+                next(noWhitespace);
             })
-            .ThenLinear<char[]>("ConvertToCharArray", async (input, next) =>
+            .ThenLinear<char[]>("ConvertToCharArray", (input, next) =>
             {
                 var charArray = input.ToCharArray();
-                await next(charArray);
+                next(charArray);
             })
-            .ThenLinear<char[]>("RemoveDuplicates", async (input, next) =>
+            .ThenLinear<char[]>("RemoveDuplicates", (input, next) =>
             {
                 var uniqueChars = input.Distinct().ToArray();
-                await next(uniqueChars);
+                next(uniqueChars);
             })
-            .HandleWith("CharArrayHandler", async (input) => await charArrayHandler(input))
-            .BuildPipeline();        var defaultPipeline = space.CreatePipeline<char[]>("DefaultProcessingPipeline")
-            .StartWithLinear<(int DigitCount, int LetterCount)>("CountDigitsAndLetters", async (input, next) =>
+            .HandleWith("CharArrayHandler", (input) => charArrayHandler(input))
+            .BuildPipeline();
+        var defaultPipeline = space.CreatePipeline<char[]>("DefaultProcessingPipeline")
+            .StartWithLinear<(int DigitCount, int LetterCount)>("CountDigitsAndLetters", (input, next) =>
             {
                 var digitCount = input.Count(char.IsDigit);
                 var letterCount = input.Count(char.IsLetter);
-                await next((digitCount, letterCount));
+                next((digitCount, letterCount));
             })
-            .ThenLinear<int>("CalculateRatio", async (input, next) =>
+            .ThenLinear<int>("CalculateRatio", (input, next) =>
             {
                 // Calculate ratio of digits to letters (floor division)
                 var ratio = input.LetterCount > 0 ? input.DigitCount / input.LetterCount : input.DigitCount;
-                await next(ratio);
+                next(ratio);
             })
-            .HandleWith("IntHandler", async (input) => await intHandler(input))
+            .HandleWith("IntHandler", (input) => intHandler(input))
             .BuildPipeline();
 
         var pipeline = space.CreatePipeline<string>("TestMultiForkPipeline")
-            .StartWithLinear<string>("TrimString", async (input, next) =>
+            .StartWithLinear<string>("TrimString", (input, next) =>
             {
                 var trimmed = input.Trim();
-                await next(trimmed);
+                next(trimmed);
             })
-            .ThenMultiFork<string, char[]>("ClassifyStringContent", async (input, branches, defaultNext) =>
+            .ThenMultiFork<string, char[]>("ClassifyStringContent", (input, branches, defaultNext) =>
             {
                 var containsOnlyDigits = !string.IsNullOrEmpty(input) && input.All(char.IsDigit);
                 var containsOnlyLetters = !string.IsNullOrEmpty(input) && input.All(char.IsLetter);
@@ -547,21 +548,21 @@ public class WithoutMutationPipelineTests
 
                 if (containsOnlyDigits)
                 {
-                    await branches["DigitBranch"](input);
+                    branches["DigitBranch"](input);
                 }
                 else if (containsOnlyLetters)
                 {
-                    await branches["LetterBranch"](input);
+                    branches["LetterBranch"](input);
                 }
                 else if (containsOnlySpecialChars)
                 {
-                    await branches["SpecialCharBranch"](input);
+                    branches["SpecialCharBranch"](input);
                 }
                 else
                 {
                     // Mixed content - go to default branch
                     var charArray = input.ToCharArray();
-                    await defaultNext(charArray);
+                    defaultNext(charArray);
                 }
             },
             space => new Dictionary<string, Pipeline<string>>
@@ -574,29 +575,29 @@ public class WithoutMutationPipelineTests
             .BuildPipeline().Compile();
 
         // Act
-        await pipeline(inputValue);
+        pipeline(inputValue);
 
         // Assert
         if (expectedStringResult != "")
         {
             // Should call string handler (letter-only string)
-            await stringHandler.Received().Invoke(Arg.Is(expectedStringResult!));
-            await intHandler.DidNotReceive().Invoke(Arg.Any<int>());
-            await charArrayHandler.DidNotReceive().Invoke(Arg.Any<char[]>());
+            stringHandler.Received().Invoke(Arg.Is(expectedStringResult!));
+            intHandler.DidNotReceive().Invoke(Arg.Any<int>());
+            charArrayHandler.DidNotReceive().Invoke(Arg.Any<char[]>());
         }
         else if (expectedCharArrayResult.Length > 0)
         {
             // Should call char array handler (special char-only string)
-            await charArrayHandler.Received().Invoke(Arg.Is<char[]>(arr => arr.SequenceEqual(expectedCharArrayResult)));
-            await intHandler.DidNotReceive().Invoke(Arg.Any<int>());
-            await stringHandler.DidNotReceive().Invoke(Arg.Any<string>());
+            charArrayHandler.Received().Invoke(Arg.Is<char[]>(arr => arr.SequenceEqual(expectedCharArrayResult)));
+            intHandler.DidNotReceive().Invoke(Arg.Any<int>());
+            stringHandler.DidNotReceive().Invoke(Arg.Any<string>());
         }
         else
         {
             // Should call int handler (digit-only string or mixed content)
-            await intHandler.Received().Invoke(Arg.Is(expectedIntResult));
-            await stringHandler.DidNotReceive().Invoke(Arg.Any<string>());
-            await charArrayHandler.DidNotReceive().Invoke(Arg.Any<char[]>());
+            intHandler.Received().Invoke(Arg.Is(expectedIntResult));
+            stringHandler.DidNotReceive().Invoke(Arg.Any<string>());
+            charArrayHandler.DidNotReceive().Invoke(Arg.Any<char[]>());
         }
     }
 
