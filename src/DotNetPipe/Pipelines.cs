@@ -23,6 +23,20 @@ public static class Pipelines
     }
 
     /// <summary>
+    /// Creates a new async pipeline with the specified name.
+    /// The pipeline is created within a new space, which is a container for pipelines and their steps.
+    /// </summary>
+    /// <typeparam name="TInput">The type of the input data for the pipeline.</typeparam>
+    /// <param name="name">The name of the pipeline.</param>
+    /// <returns>A new async pipeline entry.</returns>
+    public static Async.PipelineEntry<TInput> CreateAsyncPipeline<TInput>(string name)
+    {
+        var space = new Async.Space();
+        var pipeline = space.CreatePipeline<TInput>(name);
+        return pipeline;
+    }
+
+    /// <summary>
     /// Creates a new sync pipeline with the specified name.
     /// The pipeline is created within a new space, which is a container for pipelines and their steps.
     /// </summary>
@@ -48,7 +62,18 @@ public static class Pipelines
     }
 
     /// <summary>
-    /// Creates a space for pipelines.
+    /// Creates a space for async pipelines.
+    /// A space is a container for pipelines and their steps, allowing for organized management of multiple pipelines.
+    /// Each space can contain multiple pipelines, and each pipeline can have multiple steps.
+    /// </summary>
+    /// <returns>A new async space instance.</returns>
+    public static Async.Space CreateAsyncSpace()
+    {
+        return new Async.Space();
+    }
+
+    /// <summary>
+    /// Creates a space for sync pipelines.
     /// A space is a container for pipelines and their steps, allowing for organized management of multiple pipelines.
     /// Each space can contain multiple pipelines, and each pipeline can have multiple steps.
     /// </summary>
