@@ -404,3 +404,7 @@ FodyWeavers.xsd
 .sonar/
 .sonarqube/
 *.sonarlint
+
+# DocFX
+docs/api/
+docs/_site

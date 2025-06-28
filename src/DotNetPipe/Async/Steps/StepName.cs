@@ -8,6 +8,10 @@ namespace K1vs.DotNetPipe.Async.Steps;
 /// <param name="PipelineName">The name of the pipeline to which the step belongs.</param>
 public record StepName(string Name, string PipelineName)
 {
+    /// <summary>
+    /// Returns a string representation of the step name in the format "{PipelineName}_{Name}".
+    /// </summary>
+    /// <returns>A formatted string representing the step name.</returns>
     public override string ToString()
     {
         return $"{PipelineName}_{Name}";

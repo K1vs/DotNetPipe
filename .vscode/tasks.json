@@ -64,7 +64,9 @@
                 "--",
                 "--filter",
                 "*",
-                "--join"
+                "--join",
+                "--artifacts",
+                "${workspaceFolder}/test/DotNetPipe.Benchmarks/Artifacts"
             ],
             "group": "build",
             "presentation": {
@@ -90,7 +92,9 @@
                 "--configuration",
                 "Release",
                 "--",
-                "--join"
+                "--join",
+                "--artifacts",
+                "${workspaceFolder}/test/DotNetPipe.Benchmarks/Artifacts"
             ],
             "group": "build",
             "presentation": {
@@ -120,7 +124,9 @@
                 "*",
                 "--job",
                 "dry",
-                "--join"
+                "--join",
+                "--artifacts",
+                "${workspaceFolder}/test/DotNetPipe.Benchmarks/Artifacts"
             ],
             "group": "build",
             "presentation": {
@@ -148,7 +154,9 @@
                 "--",
                 "--job",
                 "dry",
-                "--join"
+                "--join",
+                "--artifacts",
+                "${workspaceFolder}/test/DotNetPipe.Benchmarks/Artifacts"
             ],
             "group": "build",
             "presentation": {

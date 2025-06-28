@@ -3,10 +3,10 @@ namespace K1vs.DotNetPipe.Async.Steps.ForkSteps;
 /// <summary>
 /// Represents a fork step pipeline a pipeline that allows branching into two separate pipelines based on a selector.
 /// </summary>
-/// typeparam name="TEntryStepInput">The type of the input for the entry step.</typeparam>
-/// typeparam name="TInput">The type of the input for the fork step.</typeparam>
-/// typeparam name="TBranchAInput">The type of the input for branch A.</typeparam>
-/// typeparam name="TBranchBInput">The type of the input for branch B.</typeparam>
+/// <typeparam name="TEntryStepInput">The type of the input for the entry step.</typeparam>
+/// <typeparam name="TInput">The type of the input for the fork step.</typeparam>
+/// <typeparam name="TBranchAInput">The type of the input for branch A.</typeparam>
+/// <typeparam name="TBranchBInput">The type of the input for branch B.</typeparam>
 public sealed class PipeForkStep<TEntryStepInput, TInput, TBranchAInput, TBranchBInput> : ForkStep<TEntryStepInput, TInput, TBranchAInput, TBranchBInput>
 {
     /// <summary>

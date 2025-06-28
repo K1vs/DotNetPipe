@@ -3,7 +3,7 @@ namespace K1vs.DotNetPipe.Universal.Steps.ForkSteps;
 /// <summary>
 /// Represents a fork step in a pipeline that allows branching based on a selector.
 /// </summary>
-/// typeparam name="TEntryStepInput">The type of the input for the entry step.</typeparam>
+/// <typeparam name="TEntryStepInput">The type of the input for the entry step.</typeparam>
 /// <typeparam name="TBranchAInput">The type of the input for branch A.</typeparam>
 /// <typeparam name="TBranchBInput">The type of the input for branch B.</typeparam>
 public sealed class EntryForkStep<TEntryStepInput, TBranchAInput, TBranchBInput> : ForkStep<TEntryStepInput, TEntryStepInput, TBranchAInput, TBranchBInput>

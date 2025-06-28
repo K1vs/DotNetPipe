@@ -6,7 +6,7 @@ namespace K1vs.DotNetPipe.Sync.Steps.ForkSteps;
 /// Represents a step in a pipeline that forks into two branches based on a selector.
 /// </summary>
 /// <typeparam name="TEntryStepInput">The type of the input for the entry step.</typeparam>
-/// <typeparam name="TInput">The type of the input for the fork step.</typeparam
+/// <typeparam name="TInput">The type of the input for the fork step.</typeparam>
 /// <typeparam name="TBranchAInput">The type of the input for branch A.</typeparam>
 /// <typeparam name="TBranchBInput">The type of the input for branch B.</typeparam>
 public abstract class ForkStep<TEntryStepInput, TInput, TBranchAInput, TBranchBInput> : Step

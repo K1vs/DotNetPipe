@@ -4,7 +4,7 @@ namespace K1vs.DotNetPipe.Mutations;
 /// Configures mutators for a specific space.
 /// This class allows you to incrementally define mutators that will be applied to the space.
 /// </summary>
-/// typeparam name="TSpace">The type of the space to which mutators will be applied.</typeparam>
+/// <typeparam name="TSpace">The type of the space to which mutators will be applied.</typeparam>
 public class MutatorsConfigurator<TSpace>
 {
     private readonly List<Action<TSpace>> _mutatorsConfigurator = [];

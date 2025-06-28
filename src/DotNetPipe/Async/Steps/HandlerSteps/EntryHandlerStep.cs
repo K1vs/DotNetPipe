@@ -14,6 +14,7 @@ public sealed class EntryHandlerStep<TEntryStepInput> : HandlerStep<TEntryStepIn
     /// </summary>
     /// <param name="name">The name of the step.</param>
     /// <param name="handler">The handler that processes the input.</param>
+    /// <param name="builder">The pipeline builder.</param>
     internal EntryHandlerStep(string name, Handler<TEntryStepInput> handler, PipelineBuilder builder)
         : base(name, handler, builder)
     {

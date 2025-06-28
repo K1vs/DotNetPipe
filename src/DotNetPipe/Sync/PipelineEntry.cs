@@ -100,7 +100,7 @@ public class PipelineEntry<TPipelineInput>
     /// <param name="name">The name of the step.</param>
     /// <param name="selector">The selector for the switch step.</param>
     /// <param name="caseBuilder">A function that builds the case sub-pipelines.</param>
-    /// <param name="defaultBuilder">The builder for the default sub-pipeline.</param
+    /// <param name="defaultBuilder">The builder for the default sub-pipeline.</param>
     /// <returns>An instance of <see cref="EntrySwitchStep{TPipelineInput, TCaseInput, TDefaultInput, TNextInput}"/> representing the switch step.</returns>
     public EntrySwitchStep<TPipelineInput, TCaseInput, TDefaultInput, TNextInput> StartWithSwitch<TCaseInput, TDefaultInput, TNextInput>(string name,
         SwitchSelector<TPipelineInput, TCaseInput, TDefaultInput> selector,

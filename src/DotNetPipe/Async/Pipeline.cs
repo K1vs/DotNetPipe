@@ -52,7 +52,7 @@ public class Pipeline<TInput> : IPipeline
 
     /// <summary>
     /// Compiles the pipeline into a handler that can be executed.
-    /// Optionally, you can configure mutators for the pipeline, using the provided <see cref="mutatorsConfigurator"/>.
+    /// Optionally, you can configure mutators for the pipeline, using the provided <paramref name="mutatorsConfigurator"/>.
     /// The mutators can modify the behavior of the steps in the pipeline, allowing for dynamic changes to how the pipeline processes data.
     /// </summary>
     /// <param name="mutatorsConfigurator">An optional action to configure mutators for the pipeline.</param>
