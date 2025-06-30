@@ -1,23 +1,23 @@
 using K1vs.DotNetPipe.Mutations;
-using K1vs.DotNetPipe.Universal;
+using K1vs.DotNetPipe.Async;
 
-namespace K1vs.DotNetPipe.Tests.Universal;
+namespace K1vs.DotNetPipe.Tests.Async;
 
 /// <summary>
 /// Test handler step implementation
 /// </summary>
 public class TestHandlerStep : IHandlerStep<int>
 {
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestHandlerStep(Func<int, ValueTask> handler)
+    public TestHandlerStep(Func<int, Task> handler)
     {
         _handler = handler;
     }
 
     public string Name => "TestHandler";
 
-    public async ValueTask Handle(int input)
+    public async Task Handle(int input)
     {
         await _handler(input);
     }
@@ -29,9 +29,9 @@ public class TestHandlerStep : IHandlerStep<int>
 public class TestPipeline : IPipeline<int>
 {
     private readonly Handler<int> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, Task> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -47,14 +47,14 @@ public class TestPipeline : IPipeline<int>
     {
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<int>("TestPipeline")
+        var pipeline = Pipelines.CreateAsyncPipeline<int>("TestPipeline")
             .StartWithHandler(handlerStep)
             .BuildPipeline();
 
         return pipeline;
     }
 
-    public async ValueTask Run(int input) => await _compiledPipeline(input);
+    public async Task Run(int input) => await _compiledPipeline(input);
 }
 
 /// <summary>
@@ -70,7 +70,7 @@ public class TestLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async Task Handle(int input, Handler<int> next)
     {
         var result = input + ConstantToAdd;
         await next(result);
@@ -86,7 +86,7 @@ public class TestSecondLinearStep : ILinearStep<int, int>
 
     public string Name => "MultiplyByCoefficient";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async Task Handle(int input, Handler<int> next)
     {
         var result = input * MultiplierCoefficient;
         await next(result);
@@ -99,9 +99,9 @@ public class TestSecondLinearStep : ILinearStep<int, int>
 public class TestThreeStepPipeline : IPipeline<int>
 {
     private readonly Handler<int> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestThreeStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestThreeStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, Task> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -119,7 +119,7 @@ public class TestThreeStepPipeline : IPipeline<int>
         var secondLinearStep = new TestSecondLinearStep(); // MultiplyByCoefficient step (multiplies by 2)
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<int>("TestThreeStepPipeline")
+        var pipeline = Pipelines.CreateAsyncPipeline<int>("TestThreeStepPipeline")
             .StartWithLinear(firstLinearStep)
             .ThenLinear(secondLinearStep)
             .HandleWith(handlerStep)
@@ -128,7 +128,7 @@ public class TestThreeStepPipeline : IPipeline<int>
         return pipeline;
     }
 
-    public async ValueTask Run(int input) => await _compiledPipeline(input);
+    public async Task Run(int input) => await _compiledPipeline(input);
 }
 
 /// <summary>
@@ -137,9 +137,9 @@ public class TestThreeStepPipeline : IPipeline<int>
 public class TestTwoStepPipeline : IPipeline<int>
 {
     private readonly Handler<int> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestTwoStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestTwoStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, Task> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -156,7 +156,7 @@ public class TestTwoStepPipeline : IPipeline<int>
         var linearStep = new TestLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<int>("TestTwoStepPipeline")
+        var pipeline = Pipelines.CreateAsyncPipeline<int>("TestTwoStepPipeline")
             .StartWithLinear(linearStep)
             .HandleWith(handlerStep)
             .BuildPipeline();
@@ -164,7 +164,7 @@ public class TestTwoStepPipeline : IPipeline<int>
         return pipeline;
     }
 
-    public async ValueTask Run(int input) => await _compiledPipeline(input);
+    public async Task Run(int input) => await _compiledPipeline(input);
 }
 
 /// <summary>
@@ -174,7 +174,7 @@ public class TestStringParseLinearStep : ILinearStep<string, int>
 {
     public string Name => "ParseString";
 
-    public async ValueTask Handle(string input, Handler<int> next)
+    public async Task Handle(string input, Handler<int> next)
     {
         if (int.TryParse(input, out var parsed))
         {
@@ -193,7 +193,7 @@ public class TestAddConstantLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async Task Handle(int input, Handler<int> next)
     {
         var result = input + ConstantToAdd;
         await next(result);
@@ -206,9 +206,9 @@ public class TestAddConstantLinearStep : ILinearStep<int, int>
 public class TestStringParsingPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestStringParsingPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestStringParsingPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, Task> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -226,7 +226,7 @@ public class TestStringParsingPipeline : IPipeline<string>
         var addConstantStep = new TestAddConstantLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestStringParsingPipeline")
+        var pipeline = Pipelines.CreateAsyncPipeline<string>("TestStringParsingPipeline")
             .StartWithLinear(parseStringStep)
             .ThenLinear(addConstantStep)
             .HandleWith(handlerStep)
@@ -235,7 +235,7 @@ public class TestStringParsingPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async Task Run(string input) => await _compiledPipeline(input);
 }
 
 /// <summary>
@@ -245,7 +245,7 @@ public class TestTrimStringLinearStep : ILinearStep<string, string>
 {
     public string Name => "TrimString";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async Task Handle(string input, Handler<string> next)
     {
         var trimmed = input.Trim();
         await next(trimmed);
@@ -259,7 +259,7 @@ public class TestCheckIntOrFloatIfStep : IIfStep<string, string, int>
 {
     public string Name => "CheckIntOrFloat";
 
-    public async ValueTask Handle(string input, Handler<string> ifNext, Handler<int> next)
+    public async Task Handle(string input, Handler<string> ifNext, Handler<int> next)
     {
         // Try to parse as int first
         if (int.TryParse(input, out var intValue))
@@ -302,7 +302,7 @@ public class TestIfStepAddConstantLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async Task Handle(int input, Handler<int> next)
     {
         var result = input + ConstantToAdd;
         await next(result);
@@ -315,9 +315,9 @@ public class TestIfStepAddConstantLinearStep : ILinearStep<int, int>
 public class TestIfStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestIfStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestIfStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, Task> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -336,7 +336,7 @@ public class TestIfStepPipeline : IPipeline<string>
         var addConstantStep = new TestIfStepAddConstantLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestIfStepPipeline")
+        var pipeline = Pipelines.CreateAsyncPipeline<string>("TestIfStepPipeline")
             .StartWithLinear(trimStep)
             .ThenIf(ifStep)
             .ThenLinear(addConstantStep)
@@ -346,7 +346,7 @@ public class TestIfStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async Task Run(string input) => await _compiledPipeline(input);
 }
 
 /// <summary>
@@ -356,7 +356,7 @@ public class TestCheckIntOrFloatIfElseStep : IIfElseStep<string, string, int, in
 {
     public string Name => "CheckIntOrFloat";
 
-    public async ValueTask Handle(string input, Handler<string> ifNext, Handler<int> elseNext)
+    public async Task Handle(string input, Handler<string> ifNext, Handler<int> elseNext)
     {
         // Try to parse as int first
         if (int.TryParse(input, out var intValue))
@@ -412,7 +412,7 @@ public class TestIfElseStepAddConstantLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async Task Handle(int input, Handler<int> next)
     {
         var result = input + ConstantToAdd;
         await next(result);
@@ -425,9 +425,9 @@ public class TestIfElseStepAddConstantLinearStep : ILinearStep<int, int>
 public class TestIfElseStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestIfElseStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestIfElseStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, Task> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -446,7 +446,7 @@ public class TestIfElseStepPipeline : IPipeline<string>
         var addConstantStep = new TestIfElseStepAddConstantLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestIfElseStepPipeline")
+        var pipeline = Pipelines.CreateAsyncPipeline<string>("TestIfElseStepPipeline")
             .StartWithLinear(trimStep)
             .ThenIfElse(ifElseStep)
             .ThenLinear(addConstantStep)
@@ -456,7 +456,7 @@ public class TestIfElseStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async Task Run(string input) => await _compiledPipeline(input);
 }
 
 /// <summary>
@@ -466,7 +466,7 @@ public class TestNumberRangeSwitchStep : ISwitchStep<string, int, int, int>
 {
     public string Name => "NumberRangeSwitch";
 
-    public async ValueTask Handle(string input, IReadOnlyDictionary<string, Handler<int>> cases, Handler<int> defaultNext)
+    public async Task Handle(string input, IReadOnlyDictionary<string, Handler<int>> cases, Handler<int> defaultNext)
     {
         // Try to parse as integer
         if (int.TryParse(input, out var number))
@@ -550,7 +550,7 @@ public class TestSwitchStepAddConstantLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async Task Handle(int input, Handler<int> next)
     {
         var result = input + ConstantToAdd;
         await next(result);
@@ -563,9 +563,9 @@ public class TestSwitchStepAddConstantLinearStep : ILinearStep<int, int>
 public class TestSwitchStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestSwitchStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestSwitchStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, Task> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -584,7 +584,7 @@ public class TestSwitchStepPipeline : IPipeline<string>
         var addConstantStep = new TestSwitchStepAddConstantLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestSwitchPipeline")
+        var pipeline = Pipelines.CreateAsyncPipeline<string>("TestSwitchPipeline")
             .StartWithLinear(trimStep)
             .ThenSwitch(switchStep)
             .ThenLinear(addConstantStep)
@@ -594,7 +594,7 @@ public class TestSwitchStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async Task Run(string input) => await _compiledPipeline(input);
 }
 
 /// <summary>
@@ -602,10 +602,10 @@ public class TestSwitchStepPipeline : IPipeline<string>
 /// </summary>
 public class TestDigitContentForkStep : IForkStep<string, string, string>
 {
-    private readonly Func<int, ValueTask> _intHandler;
-    private readonly Func<string, ValueTask> _stringHandler;
+    private readonly Func<int, Task> _intHandler;
+    private readonly Func<string, Task> _stringHandler;
 
-    public TestDigitContentForkStep(Func<int, ValueTask> intHandler, Func<string, ValueTask> stringHandler)
+    public TestDigitContentForkStep(Func<int, Task> intHandler, Func<string, Task> stringHandler)
     {
         _intHandler = intHandler;
         _stringHandler = stringHandler;
@@ -613,7 +613,7 @@ public class TestDigitContentForkStep : IForkStep<string, string, string>
 
     public string Name => "DigitContentFork";
 
-    public async ValueTask Handle(string input, Handler<string> branchANext, Handler<string> branchBNext)
+    public async Task Handle(string input, Handler<string> branchANext, Handler<string> branchBNext)
     {
         // Check if string contains only digits (after trimming)
         var containsOnlyDigits = !string.IsNullOrEmpty(input) && input.All(char.IsDigit);
@@ -666,7 +666,7 @@ public class TestForkStepRemoveNonDigitsLinearStep : ILinearStep<string, string>
 {
     public string Name => "RemoveNonDigits";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async Task Handle(string input, Handler<string> next)
     {
         var digitsOnly = new string(input.Where(char.IsDigit).ToArray());
         await next(digitsOnly);
@@ -680,7 +680,7 @@ public class TestForkStepParseToIntLinearStep : ILinearStep<string, int>
 {
     public string Name => "ParseToInt";
 
-    public async ValueTask Handle(string input, Handler<int> next)
+    public async Task Handle(string input, Handler<int> next)
     {
         if (int.TryParse(input, out var number))
         {
@@ -698,16 +698,16 @@ public class TestForkStepParseToIntLinearStep : ILinearStep<string, int>
 /// </summary>
 public class TestForkStepIntHandlerStep : IHandlerStep<int>
 {
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestForkStepIntHandlerStep(Func<int, ValueTask> handler)
+    public TestForkStepIntHandlerStep(Func<int, Task> handler)
     {
         _handler = handler;
     }
 
     public string Name => "IntHandler";
 
-    public async ValueTask Handle(int input)
+    public async Task Handle(int input)
     {
         await _handler(input);
     }
@@ -720,7 +720,7 @@ public class TestForkStepRemoveDigitsLinearStep : ILinearStep<string, string>
 {
     public string Name => "RemoveDigits";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async Task Handle(string input, Handler<string> next)
     {
         var nonDigitsOnly = new string(input.Where(c => !char.IsDigit(c)).ToArray());
         await next(nonDigitsOnly);
@@ -734,7 +734,7 @@ public class TestForkStepAddSpacesLinearStep : ILinearStep<string, string>
 {
     public string Name => "AddSpaces";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async Task Handle(string input, Handler<string> next)
     {
         var withSpaces = $"  {input}  ";
         await next(withSpaces);
@@ -746,16 +746,16 @@ public class TestForkStepAddSpacesLinearStep : ILinearStep<string, string>
 /// </summary>
 public class TestForkStepStringHandlerStep : IHandlerStep<string>
 {
-    private readonly Func<string, ValueTask> _handler;
+    private readonly Func<string, Task> _handler;
 
-    public TestForkStepStringHandlerStep(Func<string, ValueTask> handler)
+    public TestForkStepStringHandlerStep(Func<string, Task> handler)
     {
         _handler = handler;
     }
 
     public string Name => "StringHandler";
 
-    public async ValueTask Handle(string input)
+    public async Task Handle(string input)
     {
         await _handler(input);
     }
@@ -767,10 +767,10 @@ public class TestForkStepStringHandlerStep : IHandlerStep<string>
 public class TestForkStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _intHandler;
-    private readonly Func<string, ValueTask> _stringHandler;
+    private readonly Func<int, Task> _intHandler;
+    private readonly Func<string, Task> _stringHandler;
 
-    public TestForkStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> intHandler, Func<string, ValueTask> stringHandler)
+    public TestForkStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, Task> intHandler, Func<string, Task> stringHandler)
     {
         _intHandler = intHandler;
         _stringHandler = stringHandler;
@@ -788,7 +788,7 @@ public class TestForkStepPipeline : IPipeline<string>
         var trimStep = new TestTrimStringLinearStep();
         var forkStep = new TestDigitContentForkStep(_intHandler, _stringHandler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestForkPipeline")
+        var pipeline = Pipelines.CreateAsyncPipeline<string>("TestForkPipeline")
             .StartWithLinear(trimStep)
             .ThenFork(forkStep)
             .BuildPipeline();
@@ -796,7 +796,7 @@ public class TestForkStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async Task Run(string input) => await _compiledPipeline(input);
 }
 
 /// <summary>
@@ -805,13 +805,13 @@ public class TestForkStepPipeline : IPipeline<string>
 public class TestMultiForkStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _intHandler;
-    private readonly Func<string, ValueTask> _stringHandler;
-    private readonly Func<char[], ValueTask> _charArrayHandler;
+    private readonly Func<int, Task> _intHandler;
+    private readonly Func<string, Task> _stringHandler;
+    private readonly Func<char[], Task> _charArrayHandler;
 
     public string Name => "TestMultiForkPipeline";
 
-    public TestMultiForkStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> intHandler, Func<string, ValueTask> stringHandler, Func<char[], ValueTask> charArrayHandler)
+    public TestMultiForkStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, Task> intHandler, Func<string, Task> stringHandler, Func<char[], Task> charArrayHandler)
     {
         _intHandler = intHandler;
         _stringHandler = stringHandler;
@@ -831,7 +831,7 @@ public class TestMultiForkStepPipeline : IPipeline<string>
         var trimStep = new TestMultiForkTrimStep();
         var multiForkStep = new TestMultiForkStep(_intHandler, _stringHandler, _charArrayHandler);
 
-        var space = Pipelines.CreateSpace();
+        var space = Pipelines.CreateAsyncSpace();
 
         // Create sub-pipelines
         space.CreatePipeline<string>("DigitProcessingPipeline")
@@ -866,7 +866,7 @@ public class TestMultiForkStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async Task Run(string input) => await _compiledPipeline(input);
 }
 
 /// <summary>
@@ -876,7 +876,7 @@ public class TestMultiForkTrimStep : ILinearStep<string, string>
 {
     public string Name => "TrimString";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async Task Handle(string input, Handler<string> next)
     {
         var trimmed = input.Trim();
         await next(trimmed);
@@ -888,20 +888,20 @@ public class TestMultiForkTrimStep : ILinearStep<string, string>
 /// </summary>
 public class TestMultiForkStep : IMultiForkStep<string, string, char[]>
 {
-    private readonly Func<int, ValueTask> _intHandler;
-    private readonly Func<string, ValueTask> _stringHandler;
-    private readonly Func<char[], ValueTask> _charArrayHandler;
+    private readonly Func<int, Task> _intHandler;
+    private readonly Func<string, Task> _stringHandler;
+    private readonly Func<char[], Task> _charArrayHandler;
 
     public string Name => "ClassifyStringContent";
 
-    public TestMultiForkStep(Func<int, ValueTask> intHandler, Func<string, ValueTask> stringHandler, Func<char[], ValueTask> charArrayHandler)
+    public TestMultiForkStep(Func<int, Task> intHandler, Func<string, Task> stringHandler, Func<char[], Task> charArrayHandler)
     {
         _intHandler = intHandler;
         _stringHandler = stringHandler;
         _charArrayHandler = charArrayHandler;
     }
 
-    public async ValueTask Handle(string input, IReadOnlyDictionary<string, Handler<string>> branches, Handler<char[]> defaultNext)
+    public async Task Handle(string input, IReadOnlyDictionary<string, Handler<string>> branches, Handler<char[]> defaultNext)
     {
         var containsOnlyDigits = !string.IsNullOrEmpty(input) && input.All(char.IsDigit);
         var containsOnlyLetters = !string.IsNullOrEmpty(input) && input.All(char.IsLetter);
@@ -950,7 +950,7 @@ public class TestMultiForkParseToIntStep : ILinearStep<string, int>
 {
     public string Name => "ParseStringToInt";
 
-    public async ValueTask Handle(string input, Handler<int> next)
+    public async Task Handle(string input, Handler<int> next)
     {
         if (int.TryParse(input, out var number))
         {
@@ -970,7 +970,7 @@ public class TestMultiForkAddConstantStep : ILinearStep<int, int>
 {
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async Task Handle(int input, Handler<int> next)
     {
         var result = input + 10; // Add constant 10
         await next(result);
@@ -982,16 +982,16 @@ public class TestMultiForkAddConstantStep : ILinearStep<int, int>
 /// </summary>
 public class TestMultiForkIntHandlerStep : IHandlerStep<int>
 {
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestMultiForkIntHandlerStep(Func<int, ValueTask> handler)
+    public TestMultiForkIntHandlerStep(Func<int, Task> handler)
     {
         _handler = handler;
     }
 
     public string Name => "IntHandler";
 
-    public async ValueTask Handle(int input)
+    public async Task Handle(int input)
     {
         await _handler(input);
     }
@@ -1004,7 +1004,7 @@ public class TestMultiForkAddSpacesStep : ILinearStep<string, string>
 {
     public string Name => "AddSpaces";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async Task Handle(string input, Handler<string> next)
     {
         var withSpaces = $"  {input}  ";
         await next(withSpaces);
@@ -1016,16 +1016,16 @@ public class TestMultiForkAddSpacesStep : ILinearStep<string, string>
 /// </summary>
 public class TestMultiForkStringHandlerStep : IHandlerStep<string>
 {
-    private readonly Func<string, ValueTask> _handler;
+    private readonly Func<string, Task> _handler;
 
-    public TestMultiForkStringHandlerStep(Func<string, ValueTask> handler)
+    public TestMultiForkStringHandlerStep(Func<string, Task> handler)
     {
         _handler = handler;
     }
 
     public string Name => "StringHandler";
 
-    public async ValueTask Handle(string input)
+    public async Task Handle(string input)
     {
         await _handler(input);
     }
@@ -1038,7 +1038,7 @@ public class TestMultiForkRemoveWhitespaceStep : ILinearStep<string, string>
 {
     public string Name => "RemoveWhitespace";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async Task Handle(string input, Handler<string> next)
     {
         var noWhitespace = new string(input.Where(c => !char.IsWhiteSpace(c)).ToArray());
         await next(noWhitespace);
@@ -1052,7 +1052,7 @@ public class TestMultiForkConvertToCharArrayStep : ILinearStep<string, char[]>
 {
     public string Name => "ConvertToCharArray";
 
-    public async ValueTask Handle(string input, Handler<char[]> next)
+    public async Task Handle(string input, Handler<char[]> next)
     {
         var charArray = input.ToCharArray();
         await next(charArray);
@@ -1066,7 +1066,7 @@ public class TestMultiForkRemoveDuplicatesStep : ILinearStep<char[], char[]>
 {
     public string Name => "RemoveDuplicates";
 
-    public async ValueTask Handle(char[] input, Handler<char[]> next)
+    public async Task Handle(char[] input, Handler<char[]> next)
     {
         var uniqueChars = input.Distinct().ToArray();
         await next(uniqueChars);
@@ -1078,16 +1078,16 @@ public class TestMultiForkRemoveDuplicatesStep : ILinearStep<char[], char[]>
 /// </summary>
 public class TestMultiForkCharArrayHandlerStep : IHandlerStep<char[]>
 {
-    private readonly Func<char[], ValueTask> _handler;
+    private readonly Func<char[], Task> _handler;
 
-    public TestMultiForkCharArrayHandlerStep(Func<char[], ValueTask> handler)
+    public TestMultiForkCharArrayHandlerStep(Func<char[], Task> handler)
     {
         _handler = handler;
     }
 
     public string Name => "CharArrayHandler";
 
-    public async ValueTask Handle(char[] input)
+    public async Task Handle(char[] input)
     {
         await _handler(input);
     }
@@ -1100,7 +1100,7 @@ public class TestMultiForkCountDigitsAndLettersStep : ILinearStep<char[], (int D
 {
     public string Name => "CountDigitsAndLetters";
 
-    public async ValueTask Handle(char[] input, Handler<(int DigitCount, int LetterCount)> next)
+    public async Task Handle(char[] input, Handler<(int DigitCount, int LetterCount)> next)
     {
         var digitCount = input.Count(char.IsDigit);
         var letterCount = input.Count(char.IsLetter);
@@ -1115,7 +1115,7 @@ public class TestMultiForkCalculateRatioStep : ILinearStep<(int DigitCount, int 
 {
     public string Name => "CalculateRatio";
 
-    public async ValueTask Handle((int DigitCount, int LetterCount) input, Handler<int> next)
+    public async Task Handle((int DigitCount, int LetterCount) input, Handler<int> next)
     {
         // Calculate ratio of digits to letters (floor division)
         var ratio = input.LetterCount > 0 ? input.DigitCount / input.LetterCount : input.DigitCount;
@@ -1128,16 +1128,16 @@ public class TestMultiForkCalculateRatioStep : ILinearStep<(int DigitCount, int 
 /// </summary>
 public class TestMultiForkDefaultIntHandlerStep : IHandlerStep<int>
 {
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, Task> _handler;
 
-    public TestMultiForkDefaultIntHandlerStep(Func<int, ValueTask> handler)
+    public TestMultiForkDefaultIntHandlerStep(Func<int, Task> handler)
     {
         _handler = handler;
     }
 
     public string Name => "IntHandler";
 
-    public async ValueTask Handle(int input)
+    public async Task Handle(int input)
     {
         await _handler(input);
     }

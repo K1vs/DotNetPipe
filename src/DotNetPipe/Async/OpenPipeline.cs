@@ -8,26 +8,10 @@ namespace K1vs.DotNetPipe.Async;
 /// </summary>
 /// <typeparam name="TInput">The type of the input data that the pipeline processes.</typeparam>
 /// <typeparam name="TNextInput">The type of the next input data that the pipeline processes after the entry step.</typeparam>
-public class OpenPipeline<TInput, TNextInput> : IPipeline
+public class OpenPipeline<TInput, TNextInput> : Pipeline
 {
-    /// <summary>
-    /// Gets the space in which the pipeline is defined.
-    /// </summary>
-    public Space Space => EntryStep.Builder.Space;
-
-    /// <summary>
-    /// Gets the name of the pipeline.
-    /// </summary>
-    public string Name { get; }
-
     /// <inheritdoc/>
-    public Step EntryStep { get; }
-
-    /// <inheritdoc/>
-    public Step LastStep => ReducedPipeStep;
-
-    /// <inheritdoc/>
-    public bool IsOpenPipeline => true;
+    public override bool IsOpenPipeline => true;
 
     /// <summary>
     /// Gets the reduced pipe step that represents the last step in the pipeline.
@@ -42,9 +26,8 @@ public class OpenPipeline<TInput, TNextInput> : IPipeline
     /// <param name="entryStep">The entry step of the pipeline.</param>
     /// <param name="lastStep">The last step of the pipeline, which is a reduced pipe step.</param>
     internal OpenPipeline(string name, Step entryStep, ReducedPipeStep<TInput, TNextInput> lastStep)
+        : base(name, entryStep, lastStep)
     {
-        Name = name;
-        EntryStep = entryStep;
         ReducedPipeStep = lastStep;
     }
 

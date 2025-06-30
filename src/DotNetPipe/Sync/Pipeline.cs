@@ -4,6 +4,56 @@ using K1vs.DotNetPipe.Sync.Steps;
 namespace K1vs.DotNetPipe.Sync;
 
 /// <summary>
+/// Represents a pipeline in the DotNetPipe framework.
+/// A pipeline consists of a series of steps that process input data sequentially.
+/// Each pipeline has an entry step where processing begins and a last step that concludes the processing.
+/// Pipelines can be open, allowing integrate it in another pipeline as a sub-pipeline in if, ifelse or switch step.
+/// Otherwise, it can be called directly or can be integrated in another pipeline as a sub-pipeline in fork or multifork step.
+/// </summary>
+public abstract class Pipeline
+{
+    /// <summary>
+    /// Name of the pipeline.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
+    /// Entry step of the pipeline.
+    /// </summary>
+    public Step EntryStep { get; }
+
+    /// <summary>
+    /// Last step of the pipeline.
+    /// If the pipeline is open, this is the last step that can be extended.
+    /// If the pipeline is closed, this is the step that handles the final input, e.g. a handler step.
+    /// </summary>
+    public Step LastStep { get; }
+
+    /// <summary>
+    /// True if the pipeline is an open pipeline, meaning it can be extended with additional steps.
+    /// </summary>
+    public abstract bool IsOpenPipeline { get; }
+
+    /// <summary>
+    /// Gets the space in which the pipeline is defined.
+    /// </summary>
+    public Space Space => EntryStep.Builder.Space;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Pipeline"/> class.
+    /// </summary>
+    /// <param name="name">The name of the pipeline.</param>
+    /// <param name="entryStep">The entry step of the pipeline.</param>
+    /// <param name="lastStep">The last step of the pipeline.</param>
+    public Pipeline(string name, Step entryStep, Step lastStep)
+    {
+        Name = name;
+        EntryStep = entryStep;
+        LastStep = lastStep;
+    }
+}
+
+/// <summary>
 /// Represents a pipeline that processes input of type <typeparamref name="TInput"/>.
 /// A pipeline can consist of multiple steps, where each step can perform operations on the input data.
 /// Pipelines typically start with an entry step and end with a handler step.
@@ -12,28 +62,12 @@ namespace K1vs.DotNetPipe.Sync;
 /// This pipeline itself can be used as a sub-pipeline in another pipeline in fork or multifork step.
 /// </summary>
 /// <typeparam name="TInput">The type of the input data that the pipeline processes.</typeparam>
-public class Pipeline<TInput> : IPipeline
+public class Pipeline<TInput> : Pipeline
 {
     private readonly Func<Handler<TInput>> _buildHandler;
 
-    /// <summary>
-    /// Gets the space in which the pipeline is defined.
-    /// </summary>
-    public Space Space => EntryStep.Builder.Space;
-
-    /// <summary>
-    /// Gets the name of the pipeline.
-    /// </summary>
-    public string Name { get; }
-
     /// <inheritdoc/>
-    public Step EntryStep { get; }
-
-    /// <inheritdoc/>
-    public Step LastStep { get; }
-
-    /// <inheritdoc/>
-    public bool IsOpenPipeline => false;
+    public override bool IsOpenPipeline => false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Pipeline{TInput}"/> class.
@@ -43,10 +77,8 @@ public class Pipeline<TInput> : IPipeline
     /// <param name="lastStep">The last step of the pipeline.</param>
     /// <param name="buildHandler">A function that builds the handler for the pipeline.</param>
     internal Pipeline(string name, Step entryStep, Step lastStep, Func<Handler<TInput>> buildHandler)
+        : base(name, entryStep, lastStep)
     {
-        Name = name;
-        EntryStep = entryStep;
-        LastStep = lastStep;
         _buildHandler = buildHandler;
     }
 

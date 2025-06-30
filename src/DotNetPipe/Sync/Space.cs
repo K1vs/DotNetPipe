@@ -21,7 +21,7 @@ public class Space
 {
     private readonly Dictionary<StepName, Step> _steps = [];
 
-    private readonly Dictionary<string, IPipeline> _pipelines = [];
+    private readonly Dictionary<string, Pipeline> _pipelines = [];
 
     /// <summary>
     /// Gets a read-only collection of all steps in the space.
@@ -35,7 +35,7 @@ public class Space
     /// Each pipeline can be accessed by its name, and it can contain multiple steps.
     /// Pipelines can be of various types, including pipelines and open pipelines.
     /// </summary>
-    public IReadOnlyDictionary<string, IPipeline> Pipelines => _pipelines.AsReadOnly();
+    public IReadOnlyDictionary<string, Pipeline> Pipelines => _pipelines.AsReadOnly();
 
     /// <summary>
     /// Stating point for creating a new pipeline.
@@ -56,7 +56,7 @@ public class Space
     /// </summary>
     /// <param name="name">The name of the pipeline.</param>
     /// <returns>The pipeline if found; otherwise, null.</returns>
-    public IPipeline? GetPipeline(string name)
+    public Pipeline? GetPipeline(string name)
     {
         return _pipelines.GetValueOrDefault(name);
     }
@@ -68,7 +68,7 @@ public class Space
     /// <param name="name">The name of the pipeline.</param>
     /// <returns>The pipeline if found; otherwise, null.</returns>
     /// <exception cref="PipelineNotFoundException"></exception>
-    public IPipeline? GetRequiredPipeline(string name)
+    public Pipeline? GetRequiredPipeline(string name)
     {
         if (_pipelines.TryGetValue(name, out var pipeline))
         {
@@ -519,7 +519,7 @@ public class Space
     /// </summary>
     /// <param name="pipeline">The pipeline to add.</param>
     /// <exception cref="PipelineWithNameAlreadyExistsException"></exception>
-    internal void AddPipeline(IPipeline pipeline)
+    internal void AddPipeline(Pipeline pipeline)
     {
         if (!_pipelines.TryAdd(pipeline.Name, pipeline))
         {

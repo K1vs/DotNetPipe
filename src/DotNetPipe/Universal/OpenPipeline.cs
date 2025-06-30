@@ -10,11 +10,6 @@ namespace K1vs.DotNetPipe.Universal;
 /// <typeparam name="TNextInput">The type of the next input data that the pipeline processes after the entry step.</typeparam>
 public class OpenPipeline<TInput, TNextInput> : Pipeline
 {
-    /// <summary>
-    /// Gets the space in which the pipeline is defined.
-    /// </summary>
-    public Space Space => EntryStep.Builder.Space;
-
     /// <inheritdoc/>
     public override bool IsOpenPipeline => true;
 

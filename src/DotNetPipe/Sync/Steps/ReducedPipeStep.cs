@@ -60,6 +60,19 @@ public abstract class ReducedPipeStep<TEntryStepInput, TNextInput> : Step
     }
 
     /// <summary>
+    /// Creates a linear step that follows this reduced pipe step in the pipeline.
+    /// A linear step is a step that processes the input data and calls the next step in the pipeline.
+    /// The next step can be another linear step, an if step, a switch step, or a fork step.
+    /// </summary>
+    /// <typeparam name="TNextStepNextInput">The type of the input data for the next step after this linear step.</typeparam>
+    /// <param name="step">The linear step that represents the next step in the pipeline.</param>
+    /// <returns>A linear step that processes the input data and calls the next step in the pipeline.</returns>
+    public LinearStep<TEntryStepInput, TNextInput, TNextStepNextInput> ThenLinear<TNextStepNextInput>(ILinearStep<TNextInput, TNextStepNextInput> step)
+    {
+        return ThenLinear<TNextStepNextInput>(step.Name, step.Handle);
+    }
+
+    /// <summary>
     /// Creates an if step that follows this reduced pipe step in the pipeline.
     /// An if step is a conditional step that processes the input data and calls a call true branch if the condition is met,
     /// or skips to the next step if the condition is not met.
@@ -75,6 +88,20 @@ public abstract class ReducedPipeStep<TEntryStepInput, TNextInput> : Step
         Func<Space, OpenPipeline<TIfInput, TNextStepNextInput>> trueBuilder)
     {
         return new PipeIfStep<TEntryStepInput, TNextInput, TIfInput, TNextStepNextInput>(this, name, selector, trueBuilder, Builder);
+    }
+
+    /// <summary>
+    /// Creates an if step that follows this reduced pipe step in the pipeline.
+    /// An if step is a conditional step that processes the input data and calls a call true branch if the condition is met,
+    /// or skips to the next step if the condition is not met.
+    /// </summary>
+    /// <typeparam name="TIfInput">The type of the input data for the if step.</typeparam>
+    /// <typeparam name="TNextStepNextInput">The type of the input data for the next step after the if step.</typeparam>
+    /// <param name="step">The if step that represents the conditional logic for the pipeline.</param>
+    /// <returns>An if step that follows this reduced pipe step in the pipeline.</returns>
+    public IfStep<TEntryStepInput, TNextInput, TIfInput, TNextStepNextInput> ThenIf<TIfInput, TNextStepNextInput>(IIfStep<TNextInput, TIfInput, TNextStepNextInput> step)
+    {
+        return ThenIf(step.Name, step.Handle, step.BuildTruePipeline);
     }
 
     /// <summary>
@@ -100,6 +127,23 @@ public abstract class ReducedPipeStep<TEntryStepInput, TNextInput> : Step
     }
 
     /// <summary>
+    /// Creates an if-else step that follows this reduced pipe step in the pipeline.
+    /// An if-else step is a conditional step that processes the input data and calls the true branch if the condition is met,
+    /// or calls the false branch if the condition is not met.
+    /// After the if-else step, the next step in the pipeline is called.
+    /// </summary>
+    /// <typeparam name="TIfInput">The type of the input data for the if step.</typeparam>
+    /// <typeparam name="TElseInput">The type of the input data for the else step.</typeparam>
+    /// <typeparam name="TNextStepNextInput">The type of the input data for the next step after the if-else step.</typeparam>
+    /// <param name="step">The if-else step that represents the conditional logic for the pipeline.</param>
+    /// <returns>An if-else step that follows this reduced pipe step in the pipeline.</returns>
+    public IfElseStep<TEntryStepInput, TNextInput, TIfInput, TElseInput, TNextStepNextInput> ThenIfElse<TIfInput, TElseInput, TNextStepNextInput>(
+        IIfElseStep<TNextInput, TIfInput, TElseInput, TNextStepNextInput> step)
+    {
+        return ThenIfElse(step.Name, step.Handle, step.BuildTruePipeline, step.BuildFalsePipeline);
+    }
+
+    /// <summary>
     /// Creates a switch step that follows this reduced pipe step in the pipeline.
     /// A switch step is a conditional step that processes the input data and calls one of the case branches based on the selector.
     /// If no case matches, the default branch is called.
@@ -119,6 +163,23 @@ public abstract class ReducedPipeStep<TEntryStepInput, TNextInput> : Step
         OpenPipeline<TDefaultInput, TNextStepNextInput> defaultBuilder)
     {
         return new PipeSwitchStep<TEntryStepInput, TNextInput, TCaseInput, TDefaultInput, TNextStepNextInput>(this, name, selector, caseBuilder, defaultBuilder, Builder);
+    }
+
+    /// <summary>
+    /// Creates a switch step that follows this reduced pipe step in the pipeline.
+    /// A switch step is a conditional step that processes the input data and calls one of the case branches based on the selector.
+    /// If no case matches, the default branch is called.
+    /// After the switch step, the next step in the pipeline is called.
+    /// </summary>
+    /// <typeparam name="TCaseInput">The type of the input data for the case branches.</typeparam>
+    /// <typeparam name="TDefaultInput">The type of the input data for the default branch.</typeparam>
+    /// <typeparam name="TNextStepNextInput">The type of the input data for the next step after the switch step.</typeparam>
+    /// <param name="step">The switch step that represents the conditional logic for the pipeline.</param>
+    /// <returns>A switch step that follows this reduced pipe step in the pipeline.</returns>
+    public PipeSwitchStep<TEntryStepInput, TNextInput, TCaseInput, TDefaultInput, TNextStepNextInput> ThenSwitch<TCaseInput, TDefaultInput, TNextStepNextInput>(
+        ISwitchStep<TNextInput, TCaseInput, TDefaultInput, TNextStepNextInput> step)
+    {
+        return ThenSwitch(step.Name, step.Handle, step.BuildCasesPipelines, step.BuildDefaultPipeline(Builder.Space));
     }
 
     /// <summary>
@@ -142,6 +203,20 @@ public abstract class ReducedPipeStep<TEntryStepInput, TNextInput> : Step
     }
 
     /// <summary>
+    /// Creates a fork step that follows this reduced pipe step in the pipeline.
+    /// A fork step is a step that processes the input data and splits it into two branches,
+    /// each of which can have its own pipeline.
+    /// </summary>
+    /// <typeparam name="TBranchAInput">The type of the input data for branch A.</typeparam>
+    /// <typeparam name="TBranchBInput">The type of the input data for branch B.</typeparam>
+    /// <param name="step">The fork step that represents the branching logic for the pipeline.</param>
+    /// <returns>A fork step that follows this reduced pipe step in the pipeline.</returns>
+    public PipeForkStep<TEntryStepInput, TNextInput, TBranchAInput, TBranchBInput> ThenFork<TBranchAInput, TBranchBInput>(IForkStep<TNextInput, TBranchAInput, TBranchBInput> step)
+    {
+        return ThenFork(step.Name, step.Handle, step.BuildBranchAPipeline, step.BuildBranchBPipeline);
+    }
+
+    /// <summary>
     /// Creates a multi-fork step that follows this reduced pipe step in the pipeline.
     /// A multi-fork step is a step that processes the input data and splits it into multiple branches,
     /// each of which can have its own pipeline, and a default branch that is executed if no branch matches the input data.
@@ -162,6 +237,20 @@ public abstract class ReducedPipeStep<TEntryStepInput, TNextInput> : Step
     }
 
     /// <summary>
+    /// Creates a multi-fork step that follows this reduced pipe step in the pipeline.
+    /// A multi-fork step is a step that processes the input data and splits it into multiple branches,
+    /// each of which can have its own pipeline, and a default branch that is executed if no branch matches the input data.
+    /// </summary>
+    /// <typeparam name="TBranchesInput">The type of the input data for the branches.</typeparam>
+    /// <typeparam name="TDefaultInput">The type of the input data for the default branch.</typeparam>
+    /// <param name="step">The multi-fork step that represents the branching logic for the pipeline.</param>
+    /// <returns>A multi-fork step that follows this reduced pipe step in the pipeline.</returns>
+    public PipeMultiForkStep<TEntryStepInput, TNextInput, TBranchesInput, TDefaultInput> ThenMultiFork<TBranchesInput, TDefaultInput>(IMultiForkStep<TNextInput, TBranchesInput, TDefaultInput> step)
+    {
+        return ThenMultiFork(step.Name, step.Handle, step.BuildBranchesPipelines, step.BuildDefaultPipeline);
+    }
+
+    /// <summary>
     /// Creates a handler step that follows this reduced pipe step in the pipeline.
     /// A handler step is a step that processes the input data using a delegate to handle the data.
     /// </summary>
@@ -171,6 +260,17 @@ public abstract class ReducedPipeStep<TEntryStepInput, TNextInput> : Step
     public PipeHandlerStep<TEntryStepInput, TNextInput> HandleWith(string name, Handler<TNextInput> @delegate)
     {
         return new PipeHandlerStep<TEntryStepInput, TNextInput>(this, name, @delegate, Builder);
+    }
+
+    /// <summary>
+    /// Creates a handler step that follows this reduced pipe step in the pipeline.
+    /// A handler step is a step that processes the input data using a delegate to handle the data.
+    /// </summary>
+    /// <param name="step">The handler step that processes the input data.</param>
+    /// <returns>A pipe handler step that processes the input data using the provided handler step.</returns>
+    public PipeHandlerStep<TEntryStepInput, TNextInput> HandleWith(IHandlerStep<TNextInput> step)
+    {
+        return HandleWith(step.Name, step.Handle);
     }
 
     /// <summary>

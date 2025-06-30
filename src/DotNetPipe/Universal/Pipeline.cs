@@ -35,6 +35,11 @@ public abstract class Pipeline
     public abstract bool IsOpenPipeline { get; }
 
     /// <summary>
+    /// Gets the space in which the pipeline is defined.
+    /// </summary>
+    public Space Space => EntryStep.Builder.Space;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Pipeline"/> class.
     /// </summary>
     /// <param name="name">The name of the pipeline.</param>
@@ -60,11 +65,6 @@ public abstract class Pipeline
 public class Pipeline<TInput> : Pipeline
 {
     private readonly Func<Handler<TInput>> _buildHandler;
-
-    /// <summary>
-    /// Gets the space in which the pipeline is defined.
-    /// </summary>
-    public Space Space => EntryStep.Builder.Space;
 
     /// <inheritdoc/>
     public override bool IsOpenPipeline => false;
