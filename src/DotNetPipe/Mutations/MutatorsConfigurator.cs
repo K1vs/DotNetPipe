@@ -25,6 +25,31 @@ public class MutatorsConfigurator<TSpace>
     }
 
     /// <summary>
+    /// Configures a mutator for the specified space using an instance of <see cref="IMutator{TSpace}"/>.
+    /// </summary>
+    /// <param name="mutator">An instance of <see cref="IMutator{TSpace}"/> that defines the mutation to be applied to the space.</param>
+    /// <returns>The current instance of the <see cref="MutatorsConfigurator{TSpace}"/> class, allowing for method chaining.</returns>
+    public MutatorsConfigurator<TSpace> Configure(IMutator<TSpace> mutator)
+    {
+        return Configure(mutator.Mutate);
+    }
+
+    /// <summary>
+    /// Configures multiple mutators for the specified space using a collection of <see cref="IMutator{TSpace}"/> instances.
+    /// This method allows you to add multiple mutators at once, each defined by an instance of <see cref="IMutator{TSpace}"/>.
+    /// </summary>
+    /// <param name="mutators">A collection of <see cref="IMutator{TSpace}"/> instances that define the mutations to be applied to the space.</param>
+    /// <returns>The current instance of the <see cref="MutatorsConfigurator{TSpace}"/> class, allowing for method chaining.</returns>
+    public MutatorsConfigurator<TSpace> Configure(IEnumerable<IMutator<TSpace>> mutators)
+    {
+        foreach (var mutator in mutators)
+        {
+            Configure(mutator);
+        }
+        return this;
+    }
+
+    /// <summary>
     /// Registers all configured mutators for the specified space.
     /// </summary>
     /// <param name="space">The space to which the mutators will be applied.</param>

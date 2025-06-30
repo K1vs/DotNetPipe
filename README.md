@@ -1,2 +1,2 @@
 # DotNetPipe
-A minimalist library for building a Chain of Responsibility with modification capabilities.
+A minimalist library for building Pipelines with modification capabilities.
