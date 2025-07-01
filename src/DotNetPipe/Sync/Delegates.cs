@@ -82,4 +82,5 @@ public delegate void Pipe<TInput, out TNextInput>(TInput input, Handler<TNextInp
 /// Delegate for a handler that processes an input and returns a value task.
 /// </summary>
 /// <typeparam name="TInput">The type of the input data.</typeparam>
+/// <param name="input">The input data to be processed.</param>
 public delegate void Handler<in TInput>(TInput input);

@@ -1,25 +1,25 @@
 using K1vs.DotNetPipe.Mutations;
-using K1vs.DotNetPipe.Universal;
+using K1vs.DotNetPipe.Cancellable;
 
-namespace K1vs.DotNetPipe.Tests.Universal;
+namespace K1vs.DotNetPipe.Tests.Cancellable;
 
 /// <summary>
 /// Test handler step implementation
 /// </summary>
 public class TestHandlerStep : IHandlerStep<int>
 {
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestHandlerStep(Func<int, ValueTask> handler)
+    public TestHandlerStep(Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
     }
 
     public string Name => "TestHandler";
 
-    public async ValueTask Handle(int input)
+    public async ValueTask Handle(int input, CancellationToken ct = default)
     {
-        await _handler(input);
+        await _handler(input, ct);
     }
 }
 
@@ -29,9 +29,9 @@ public class TestHandlerStep : IHandlerStep<int>
 public class TestPipeline : IPipeline<int>
 {
     private readonly Handler<int> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -47,14 +47,14 @@ public class TestPipeline : IPipeline<int>
     {
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<int>("TestPipeline")
+        var pipeline = Pipelines.CreateCancellablePipeline<int>("TestPipeline")
             .StartWithHandler(handlerStep)
             .BuildPipeline();
 
         return pipeline;
     }
 
-    public async ValueTask Run(int input) => await _compiledPipeline(input);
+    public async ValueTask Run(int input, CancellationToken ct = default) => await _compiledPipeline(input, ct);
 }
 
 /// <summary>
@@ -70,10 +70,10 @@ public class TestLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async ValueTask Handle(int input, Handler<int> next, CancellationToken ct = default)
     {
         var result = input + ConstantToAdd;
-        await next(result);
+        await next(result, ct);
     }
 }
 
@@ -86,10 +86,10 @@ public class TestSecondLinearStep : ILinearStep<int, int>
 
     public string Name => "MultiplyByCoefficient";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async ValueTask Handle(int input, Handler<int> next, CancellationToken ct = default)
     {
         var result = input * MultiplierCoefficient;
-        await next(result);
+        await next(result, ct);
     }
 }
 
@@ -99,9 +99,9 @@ public class TestSecondLinearStep : ILinearStep<int, int>
 public class TestThreeStepPipeline : IPipeline<int>
 {
     private readonly Handler<int> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestThreeStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestThreeStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -119,7 +119,7 @@ public class TestThreeStepPipeline : IPipeline<int>
         var secondLinearStep = new TestSecondLinearStep(); // MultiplyByCoefficient step (multiplies by 2)
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<int>("TestThreeStepPipeline")
+        var pipeline = Pipelines.CreateCancellablePipeline<int>("TestThreeStepPipeline")
             .StartWithLinear(firstLinearStep)
             .ThenLinear(secondLinearStep)
             .HandleWith(handlerStep)
@@ -128,7 +128,7 @@ public class TestThreeStepPipeline : IPipeline<int>
         return pipeline;
     }
 
-    public async ValueTask Run(int input) => await _compiledPipeline(input);
+    public async ValueTask Run(int input, CancellationToken ct = default) => await _compiledPipeline(input, ct);
 }
 
 /// <summary>
@@ -137,9 +137,9 @@ public class TestThreeStepPipeline : IPipeline<int>
 public class TestTwoStepPipeline : IPipeline<int>
 {
     private readonly Handler<int> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestTwoStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestTwoStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -156,7 +156,7 @@ public class TestTwoStepPipeline : IPipeline<int>
         var linearStep = new TestLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<int>("TestTwoStepPipeline")
+        var pipeline = Pipelines.CreateCancellablePipeline<int>("TestTwoStepPipeline")
             .StartWithLinear(linearStep)
             .HandleWith(handlerStep)
             .BuildPipeline();
@@ -164,7 +164,7 @@ public class TestTwoStepPipeline : IPipeline<int>
         return pipeline;
     }
 
-    public async ValueTask Run(int input) => await _compiledPipeline(input);
+    public async ValueTask Run(int input, CancellationToken ct = default) => await _compiledPipeline(input, ct);
 }
 
 /// <summary>
@@ -174,11 +174,11 @@ public class TestStringParseLinearStep : ILinearStep<string, int>
 {
     public string Name => "ParseString";
 
-    public async ValueTask Handle(string input, Handler<int> next)
+    public async ValueTask Handle(string input, Handler<int> next, CancellationToken ct = default)
     {
         if (int.TryParse(input, out var parsed))
         {
-            await next(parsed);
+            await next(parsed, ct);
         }
         // If doesn't parse - don't call next
     }
@@ -193,10 +193,10 @@ public class TestAddConstantLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async ValueTask Handle(int input, Handler<int> next, CancellationToken ct = default)
     {
         var result = input + ConstantToAdd;
-        await next(result);
+        await next(result, ct);
     }
 }
 
@@ -206,9 +206,9 @@ public class TestAddConstantLinearStep : ILinearStep<int, int>
 public class TestStringParsingPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestStringParsingPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestStringParsingPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -226,7 +226,7 @@ public class TestStringParsingPipeline : IPipeline<string>
         var addConstantStep = new TestAddConstantLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestStringParsingPipeline")
+        var pipeline = Pipelines.CreateCancellablePipeline<string>("TestStringParsingPipeline")
             .StartWithLinear(parseStringStep)
             .ThenLinear(addConstantStep)
             .HandleWith(handlerStep)
@@ -235,7 +235,7 @@ public class TestStringParsingPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async ValueTask Run(string input, CancellationToken ct = default) => await _compiledPipeline(input, ct);
 }
 
 /// <summary>
@@ -245,10 +245,10 @@ public class TestTrimStringLinearStep : ILinearStep<string, string>
 {
     public string Name => "TrimString";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async ValueTask Handle(string input, Handler<string> next, CancellationToken ct = default)
     {
         var trimmed = input.Trim();
-        await next(trimmed);
+        await next(trimmed, ct);
     }
 }
 
@@ -259,35 +259,35 @@ public class TestCheckIntOrFloatIfStep : IIfStep<string, string, int>
 {
     public string Name => "CheckIntOrFloat";
 
-    public async ValueTask Handle(string input, Handler<string> ifNext, Handler<int> next)
+    public async ValueTask Handle(string input, Handler<string> ifNext, Handler<int> next, CancellationToken ct = default)
     {
         // Try to parse as int first
         if (int.TryParse(input, out var intValue))
         {
             // If it's an int, continue with main pipeline
-            await next(intValue);
+            await next(intValue, ct);
         }
         else
         {
             // If not an int, go to conditional pipeline (for float parsing)
-            await ifNext(input);
+            await ifNext(input, ct);
         }
     }
 
     public OpenPipeline<string, int> BuildTruePipeline(Space space)
     {
         return space.CreatePipeline<string>("FloatProcessing")
-            .StartWithLinear<double>("ParseFloat", async (input, next) =>
+            .StartWithLinear<double>("ParseFloat", async (input, next, ct) =>
             {
                 if (double.TryParse(input, out var floatValue))
                 {
-                    await next(floatValue);
+                    await next(floatValue, ct);
                 }
             })
-            .ThenLinear<int>("RoundToInt", async (input, next) =>
+            .ThenLinear<int>("RoundToInt", async (input, next, ct) =>
             {
                 var rounded = (int)Math.Round(input);
-                await next(rounded);
+                await next(rounded, ct);
             })
             .BuildOpenPipeline();
     }
@@ -302,10 +302,10 @@ public class TestIfStepAddConstantLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async ValueTask Handle(int input, Handler<int> next, CancellationToken ct = default)
     {
         var result = input + ConstantToAdd;
-        await next(result);
+        await next(result, ct);
     }
 }
 
@@ -315,9 +315,9 @@ public class TestIfStepAddConstantLinearStep : ILinearStep<int, int>
 public class TestIfStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestIfStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestIfStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -336,7 +336,7 @@ public class TestIfStepPipeline : IPipeline<string>
         var addConstantStep = new TestIfStepAddConstantLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestIfStepPipeline")
+        var pipeline = Pipelines.CreateCancellablePipeline<string>("TestIfStepPipeline")
             .StartWithLinear(trimStep)
             .ThenIf(ifStep)
             .ThenLinear(addConstantStep)
@@ -346,7 +346,7 @@ public class TestIfStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async ValueTask Run(string input, CancellationToken ct = default) => await _compiledPipeline(input, ct);
 }
 
 /// <summary>
@@ -356,18 +356,18 @@ public class TestCheckIntOrFloatIfElseStep : IIfElseStep<string, string, int, in
 {
     public string Name => "CheckIntOrFloat";
 
-    public async ValueTask Handle(string input, Handler<string> ifNext, Handler<int> elseNext)
+    public async ValueTask Handle(string input, Handler<string> ifNext, Handler<int> elseNext, CancellationToken ct = default)
     {
         // Try to parse as int first
         if (int.TryParse(input, out var intValue))
         {
             // If it's an int, use false branch for int processing
-            await elseNext(intValue);
+            await elseNext(intValue, ct);
         }
         else
         {
             // If not an int, go to true branch (for float parsing)
-            await ifNext(input);
+            await ifNext(input, ct);
         }
     }
 
@@ -375,17 +375,17 @@ public class TestCheckIntOrFloatIfElseStep : IIfElseStep<string, string, int, in
     {
         // Float processing pipeline: parse float -> round to int
         return space.CreatePipeline<string>("FloatProcessing")
-            .StartWithLinear<double>("ParseFloat", async (input, next) =>
+            .StartWithLinear<double>("ParseFloat", async (input, next, ct) =>
             {
                 if (double.TryParse(input, out var floatValue))
                 {
-                    await next(floatValue);
+                    await next(floatValue, ct);
                 }
             })
-            .ThenLinear<int>("RoundToInt", async (input, next) =>
+            .ThenLinear<int>("RoundToInt", async (input, next, ct) =>
             {
                 var rounded = (int)Math.Round(input);
-                await next(rounded);
+                await next(rounded, ct);
             })
             .BuildOpenPipeline();
     }
@@ -394,10 +394,10 @@ public class TestCheckIntOrFloatIfElseStep : IIfElseStep<string, string, int, in
     {
         // Int processing pipeline: multiply by 2
         return space.CreatePipeline<int>("IntProcessing")
-            .StartWithLinear<int>("MultiplyByTwo", async (input, next) =>
+            .StartWithLinear<int>("MultiplyByTwo", async (input, next, ct) =>
             {
                 var result = input * 2;
-                await next(result);
+                await next(result, ct);
             })
             .BuildOpenPipeline();
     }
@@ -412,10 +412,10 @@ public class TestIfElseStepAddConstantLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async ValueTask Handle(int input, Handler<int> next, CancellationToken ct = default)
     {
         var result = input + ConstantToAdd;
-        await next(result);
+        await next(result, ct);
     }
 }
 
@@ -425,9 +425,9 @@ public class TestIfElseStepAddConstantLinearStep : ILinearStep<int, int>
 public class TestIfElseStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestIfElseStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestIfElseStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -446,7 +446,7 @@ public class TestIfElseStepPipeline : IPipeline<string>
         var addConstantStep = new TestIfElseStepAddConstantLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestIfElseStepPipeline")
+        var pipeline = Pipelines.CreateCancellablePipeline<string>("TestIfElseStepPipeline")
             .StartWithLinear(trimStep)
             .ThenIfElse(ifElseStep)
             .ThenLinear(addConstantStep)
@@ -456,7 +456,7 @@ public class TestIfElseStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async ValueTask Run(string input, CancellationToken ct = default) => await _compiledPipeline(input, ct);
 }
 
 /// <summary>
@@ -466,33 +466,33 @@ public class TestNumberRangeSwitchStep : ISwitchStep<string, int, int, int>
 {
     public string Name => "NumberRangeSwitch";
 
-    public async ValueTask Handle(string input, IReadOnlyDictionary<string, Handler<int>> cases, Handler<int> defaultNext)
+    public async ValueTask Handle(string input, IReadOnlyDictionary<string, Handler<int>> cases, Handler<int> defaultNext, CancellationToken ct = default)
     {
         // Try to parse as integer
         if (int.TryParse(input, out var number))
         {
             if (number > 100)
             {
-                await cases["GreaterThan100"](number);
+                await cases["GreaterThan100"](number, ct);
             }
             else if (number > 0)
             {
-                await cases["BetweenZeroAndHundred"](number);
+                await cases["BetweenZeroAndHundred"](number, ct);
             }
             else if (number < 0)
             {
-                await cases["LessThanZero"](number);
+                await cases["LessThanZero"](number, ct);
             }
             else // number == 0
             {
-                await cases["EqualToZero"](number);
+                await cases["EqualToZero"](number, ct);
             }
         }
         else
         {
             // If not a number, use string length
             var stringLength = input.Length;
-            await defaultNext(stringLength);
+            await defaultNext(stringLength, ct);
         }
     }
 
@@ -501,30 +501,30 @@ public class TestNumberRangeSwitchStep : ISwitchStep<string, int, int, int>
         return new Dictionary<string, OpenPipeline<int, int>>
         {
             ["GreaterThan100"] = space.CreatePipeline<int>("MultiplyByThree")
-                .StartWithLinear<int>("MultiplyOperation", async (input, next) =>
+                .StartWithLinear<int>("MultiplyOperation", async (input, next, ct) =>
                 {
                     var result = input * 3;
-                    await next(result);
+                    await next(result, ct);
                 })
                 .BuildOpenPipeline(),
             ["BetweenZeroAndHundred"] = space.CreatePipeline<int>("AddTwo")
-                .StartWithLinear<int>("AddOperation", async (input, next) =>
+                .StartWithLinear<int>("AddOperation", async (input, next, ct) =>
                 {
                     var result = input + 2;
-                    await next(result);
+                    await next(result, ct);
                 })
                 .BuildOpenPipeline(),
             ["LessThanZero"] = space.CreatePipeline<int>("MultiplyByTwo")
-                .StartWithLinear<int>("MultiplyOperation", async (input, next) =>
+                .StartWithLinear<int>("MultiplyOperation", async (input, next, ct) =>
                 {
                     var result = input * 2;
-                    await next(result);
+                    await next(result, ct);
                 })
                 .BuildOpenPipeline(),
             ["EqualToZero"] = space.CreatePipeline<int>("KeepZero")
-                .StartWithLinear<int>("IdentityOperation", async (input, next) =>
+                .StartWithLinear<int>("IdentityOperation", async (input, next, ct) =>
                 {
-                    await next(input); // Keep the same value (0)
+                    await next(input, ct); // Keep the same value (0)
                 })
                 .BuildOpenPipeline()
         }.AsReadOnly();
@@ -533,9 +533,9 @@ public class TestNumberRangeSwitchStep : ISwitchStep<string, int, int, int>
     public OpenPipeline<int, int> BuildDefaultPipeline(Space space)
     {
         return space.CreatePipeline<int>("StringLengthPipeline")
-            .StartWithLinear<int>("IdentityOperation", async (input, next) =>
+            .StartWithLinear<int>("IdentityOperation", async (input, next, ct) =>
             {
-                await next(input); // Use string length as-is
+                await next(input, ct); // Use string length as-is
             })
             .BuildOpenPipeline();
     }
@@ -550,10 +550,10 @@ public class TestSwitchStepAddConstantLinearStep : ILinearStep<int, int>
 
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async ValueTask Handle(int input, Handler<int> next, CancellationToken ct = default)
     {
         var result = input + ConstantToAdd;
-        await next(result);
+        await next(result, ct);
     }
 }
 
@@ -563,9 +563,9 @@ public class TestSwitchStepAddConstantLinearStep : ILinearStep<int, int>
 public class TestSwitchStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestSwitchStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> handler)
+    public TestSwitchStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
         var pipeline = CreateAndCompilePipeline();
@@ -584,7 +584,7 @@ public class TestSwitchStepPipeline : IPipeline<string>
         var addConstantStep = new TestSwitchStepAddConstantLinearStep();
         var handlerStep = new TestHandlerStep(_handler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestSwitchPipeline")
+        var pipeline = Pipelines.CreateCancellablePipeline<string>("TestSwitchPipeline")
             .StartWithLinear(trimStep)
             .ThenSwitch(switchStep)
             .ThenLinear(addConstantStep)
@@ -594,7 +594,7 @@ public class TestSwitchStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async ValueTask Run(string input, CancellationToken ct = default) => await _compiledPipeline(input, ct);
 }
 
 /// <summary>
@@ -602,10 +602,10 @@ public class TestSwitchStepPipeline : IPipeline<string>
 /// </summary>
 public class TestDigitContentForkStep : IForkStep<string, string, string>
 {
-    private readonly Func<int, ValueTask> _intHandler;
-    private readonly Func<string, ValueTask> _stringHandler;
+    private readonly Func<int, CancellationToken, ValueTask> _intHandler;
+    private readonly Func<string, CancellationToken, ValueTask> _stringHandler;
 
-    public TestDigitContentForkStep(Func<int, ValueTask> intHandler, Func<string, ValueTask> stringHandler)
+    public TestDigitContentForkStep(Func<int, CancellationToken, ValueTask> intHandler, Func<string, CancellationToken, ValueTask> stringHandler)
     {
         _intHandler = intHandler;
         _stringHandler = stringHandler;
@@ -613,18 +613,18 @@ public class TestDigitContentForkStep : IForkStep<string, string, string>
 
     public string Name => "DigitContentFork";
 
-    public async ValueTask Handle(string input, Handler<string> branchANext, Handler<string> branchBNext)
+    public async ValueTask Handle(string input, Handler<string> branchANext, Handler<string> branchBNext, CancellationToken ct = default)
     {
         // Check if string contains only digits (after trimming)
         var containsOnlyDigits = !string.IsNullOrEmpty(input) && input.All(char.IsDigit);
 
         if (containsOnlyDigits)
         {
-            await branchANext(input);
+            await branchANext(input, ct);
         }
         else
         {
-            await branchBNext(input);
+            await branchBNext(input, ct);
         }
     }
 
@@ -666,10 +666,10 @@ public class TestForkStepRemoveNonDigitsLinearStep : ILinearStep<string, string>
 {
     public string Name => "RemoveNonDigits";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async ValueTask Handle(string input, Handler<string> next, CancellationToken ct = default)
     {
         var digitsOnly = new string(input.Where(char.IsDigit).ToArray());
-        await next(digitsOnly);
+        await next(digitsOnly, ct);
     }
 }
 
@@ -680,15 +680,15 @@ public class TestForkStepParseToIntLinearStep : ILinearStep<string, int>
 {
     public string Name => "ParseToInt";
 
-    public async ValueTask Handle(string input, Handler<int> next)
+    public async ValueTask Handle(string input, Handler<int> next, CancellationToken ct = default)
     {
         if (int.TryParse(input, out var number))
         {
-            await next(number);
+            await next(number, ct);
         }
         else
         {
-            await next(0); // Default value if parsing fails
+            await next(0, ct); // Default value if parsing fails
         }
     }
 }
@@ -698,18 +698,18 @@ public class TestForkStepParseToIntLinearStep : ILinearStep<string, int>
 /// </summary>
 public class TestForkStepIntHandlerStep : IHandlerStep<int>
 {
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestForkStepIntHandlerStep(Func<int, ValueTask> handler)
+    public TestForkStepIntHandlerStep(Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
     }
 
     public string Name => "IntHandler";
 
-    public async ValueTask Handle(int input)
+    public async ValueTask Handle(int input, CancellationToken ct = default)
     {
-        await _handler(input);
+        await _handler(input, ct);
     }
 }
 
@@ -720,10 +720,10 @@ public class TestForkStepRemoveDigitsLinearStep : ILinearStep<string, string>
 {
     public string Name => "RemoveDigits";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async ValueTask Handle(string input, Handler<string> next, CancellationToken ct = default)
     {
         var nonDigitsOnly = new string(input.Where(c => !char.IsDigit(c)).ToArray());
-        await next(nonDigitsOnly);
+        await next(nonDigitsOnly, ct);
     }
 }
 
@@ -734,10 +734,10 @@ public class TestForkStepAddSpacesLinearStep : ILinearStep<string, string>
 {
     public string Name => "AddSpaces";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async ValueTask Handle(string input, Handler<string> next, CancellationToken ct = default)
     {
         var withSpaces = $"  {input}  ";
-        await next(withSpaces);
+        await next(withSpaces, ct);
     }
 }
 
@@ -746,18 +746,18 @@ public class TestForkStepAddSpacesLinearStep : ILinearStep<string, string>
 /// </summary>
 public class TestForkStepStringHandlerStep : IHandlerStep<string>
 {
-    private readonly Func<string, ValueTask> _handler;
+    private readonly Func<string, CancellationToken, ValueTask> _handler;
 
-    public TestForkStepStringHandlerStep(Func<string, ValueTask> handler)
+    public TestForkStepStringHandlerStep(Func<string, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
     }
 
     public string Name => "StringHandler";
 
-    public async ValueTask Handle(string input)
+    public async ValueTask Handle(string input, CancellationToken ct = default)
     {
-        await _handler(input);
+        await _handler(input, ct);
     }
 }
 
@@ -767,10 +767,10 @@ public class TestForkStepStringHandlerStep : IHandlerStep<string>
 public class TestForkStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _intHandler;
-    private readonly Func<string, ValueTask> _stringHandler;
+    private readonly Func<int, CancellationToken, ValueTask> _intHandler;
+    private readonly Func<string, CancellationToken, ValueTask> _stringHandler;
 
-    public TestForkStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> intHandler, Func<string, ValueTask> stringHandler)
+    public TestForkStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, CancellationToken, ValueTask> intHandler, Func<string, CancellationToken, ValueTask> stringHandler)
     {
         _intHandler = intHandler;
         _stringHandler = stringHandler;
@@ -788,7 +788,7 @@ public class TestForkStepPipeline : IPipeline<string>
         var trimStep = new TestTrimStringLinearStep();
         var forkStep = new TestDigitContentForkStep(_intHandler, _stringHandler);
 
-        var pipeline = Pipelines.CreatePipeline<string>("TestForkPipeline")
+        var pipeline = Pipelines.CreateCancellablePipeline<string>("TestForkPipeline")
             .StartWithLinear(trimStep)
             .ThenFork(forkStep)
             .BuildPipeline();
@@ -796,7 +796,7 @@ public class TestForkStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async ValueTask Run(string input, CancellationToken ct = default) => await _compiledPipeline(input, ct);
 }
 
 /// <summary>
@@ -805,13 +805,13 @@ public class TestForkStepPipeline : IPipeline<string>
 public class TestMultiForkStepPipeline : IPipeline<string>
 {
     private readonly Handler<string> _compiledPipeline;
-    private readonly Func<int, ValueTask> _intHandler;
-    private readonly Func<string, ValueTask> _stringHandler;
-    private readonly Func<char[], ValueTask> _charArrayHandler;
+    private readonly Func<int, CancellationToken, ValueTask> _intHandler;
+    private readonly Func<string, CancellationToken, ValueTask> _stringHandler;
+    private readonly Func<char[], CancellationToken, ValueTask> _charArrayHandler;
 
     public string Name => "TestMultiForkPipeline";
 
-    public TestMultiForkStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, ValueTask> intHandler, Func<string, ValueTask> stringHandler, Func<char[], ValueTask> charArrayHandler)
+    public TestMultiForkStepPipeline(IEnumerable<IMutator<Space>> mutators, Func<int, CancellationToken, ValueTask> intHandler, Func<string, CancellationToken, ValueTask> stringHandler, Func<char[], CancellationToken, ValueTask> charArrayHandler)
     {
         _intHandler = intHandler;
         _stringHandler = stringHandler;
@@ -831,7 +831,7 @@ public class TestMultiForkStepPipeline : IPipeline<string>
         var trimStep = new TestMultiForkTrimStep();
         var multiForkStep = new TestMultiForkStep();
 
-        var space = Pipelines.CreateSpace();
+        var space = Pipelines.CreateCancellableSpace();
 
         // Create sub-pipelines
         space.CreatePipeline<string>("DigitProcessingPipeline")
@@ -866,7 +866,7 @@ public class TestMultiForkStepPipeline : IPipeline<string>
         return pipeline;
     }
 
-    public async ValueTask Run(string input) => await _compiledPipeline(input);
+    public async ValueTask Run(string input, CancellationToken ct = default) => await _compiledPipeline(input, ct);
 }
 
 /// <summary>
@@ -876,10 +876,10 @@ public class TestMultiForkTrimStep : ILinearStep<string, string>
 {
     public string Name => "TrimString";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async ValueTask Handle(string input, Handler<string> next, CancellationToken ct = default)
     {
         var trimmed = input.Trim();
-        await next(trimmed);
+        await next(trimmed, ct);
     }
 }
 
@@ -888,13 +888,14 @@ public class TestMultiForkTrimStep : ILinearStep<string, string>
 /// </summary>
 public class TestMultiForkStep : IMultiForkStep<string, string, char[]>
 {
+
     public string Name => "ClassifyStringContent";
 
     public TestMultiForkStep()
     {
     }
 
-    public async ValueTask Handle(string input, IReadOnlyDictionary<string, Handler<string>> branches, Handler<char[]> defaultNext)
+    public async ValueTask Handle(string input, IReadOnlyDictionary<string, Handler<string>> branches, Handler<char[]> defaultNext, CancellationToken ct = default)
     {
         var containsOnlyDigits = !string.IsNullOrEmpty(input) && input.All(char.IsDigit);
         var containsOnlyLetters = !string.IsNullOrEmpty(input) && input.All(char.IsLetter);
@@ -902,21 +903,21 @@ public class TestMultiForkStep : IMultiForkStep<string, string, char[]>
 
         if (containsOnlyDigits)
         {
-            await branches["DigitBranch"](input);
+            await branches["DigitBranch"](input, ct);
         }
         else if (containsOnlyLetters)
         {
-            await branches["LetterBranch"](input);
+            await branches["LetterBranch"](input, ct);
         }
         else if (containsOnlySpecialChars)
         {
-            await branches["SpecialCharBranch"](input);
+            await branches["SpecialCharBranch"](input, ct);
         }
         else
         {
             // Mixed content - go to default branch
             var charArray = input.ToCharArray();
-            await defaultNext(charArray);
+            await defaultNext(charArray, ct);
         }
     }
 
@@ -943,15 +944,15 @@ public class TestMultiForkParseToIntStep : ILinearStep<string, int>
 {
     public string Name => "ParseStringToInt";
 
-    public async ValueTask Handle(string input, Handler<int> next)
+    public async ValueTask Handle(string input, Handler<int> next, CancellationToken ct = default)
     {
         if (int.TryParse(input, out var number))
         {
-            await next(number);
+            await next(number, ct);
         }
         else
         {
-            await next(0); // Default value if parsing fails
+            await next(0, ct); // Default value if parsing fails
         }
     }
 }
@@ -963,10 +964,10 @@ public class TestMultiForkAddConstantStep : ILinearStep<int, int>
 {
     public string Name => "AddConstant";
 
-    public async ValueTask Handle(int input, Handler<int> next)
+    public async ValueTask Handle(int input, Handler<int> next, CancellationToken ct = default)
     {
         var result = input + 10; // Add constant 10
-        await next(result);
+        await next(result, ct);
     }
 }
 
@@ -975,18 +976,18 @@ public class TestMultiForkAddConstantStep : ILinearStep<int, int>
 /// </summary>
 public class TestMultiForkIntHandlerStep : IHandlerStep<int>
 {
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestMultiForkIntHandlerStep(Func<int, ValueTask> handler)
+    public TestMultiForkIntHandlerStep(Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
     }
 
     public string Name => "IntHandler";
 
-    public async ValueTask Handle(int input)
+    public async ValueTask Handle(int input, CancellationToken ct = default)
     {
-        await _handler(input);
+        await _handler(input, ct);
     }
 }
 
@@ -997,10 +998,10 @@ public class TestMultiForkAddSpacesStep : ILinearStep<string, string>
 {
     public string Name => "AddSpaces";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async ValueTask Handle(string input, Handler<string> next, CancellationToken ct = default)
     {
         var withSpaces = $"  {input}  ";
-        await next(withSpaces);
+        await next(withSpaces, ct);
     }
 }
 
@@ -1009,18 +1010,18 @@ public class TestMultiForkAddSpacesStep : ILinearStep<string, string>
 /// </summary>
 public class TestMultiForkStringHandlerStep : IHandlerStep<string>
 {
-    private readonly Func<string, ValueTask> _handler;
+    private readonly Func<string, CancellationToken, ValueTask> _handler;
 
-    public TestMultiForkStringHandlerStep(Func<string, ValueTask> handler)
+    public TestMultiForkStringHandlerStep(Func<string, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
     }
 
     public string Name => "StringHandler";
 
-    public async ValueTask Handle(string input)
+    public async ValueTask Handle(string input, CancellationToken ct = default)
     {
-        await _handler(input);
+        await _handler(input, ct);
     }
 }
 
@@ -1031,10 +1032,10 @@ public class TestMultiForkRemoveWhitespaceStep : ILinearStep<string, string>
 {
     public string Name => "RemoveWhitespace";
 
-    public async ValueTask Handle(string input, Handler<string> next)
+    public async ValueTask Handle(string input, Handler<string> next, CancellationToken ct = default)
     {
         var noWhitespace = new string(input.Where(c => !char.IsWhiteSpace(c)).ToArray());
-        await next(noWhitespace);
+        await next(noWhitespace, ct);
     }
 }
 
@@ -1045,10 +1046,10 @@ public class TestMultiForkConvertToCharArrayStep : ILinearStep<string, char[]>
 {
     public string Name => "ConvertToCharArray";
 
-    public async ValueTask Handle(string input, Handler<char[]> next)
+    public async ValueTask Handle(string input, Handler<char[]> next, CancellationToken ct = default)
     {
         var charArray = input.ToCharArray();
-        await next(charArray);
+        await next(charArray, ct);
     }
 }
 
@@ -1059,10 +1060,10 @@ public class TestMultiForkRemoveDuplicatesStep : ILinearStep<char[], char[]>
 {
     public string Name => "RemoveDuplicates";
 
-    public async ValueTask Handle(char[] input, Handler<char[]> next)
+    public async ValueTask Handle(char[] input, Handler<char[]> next, CancellationToken ct = default)
     {
         var uniqueChars = input.Distinct().ToArray();
-        await next(uniqueChars);
+        await next(uniqueChars, ct);
     }
 }
 
@@ -1071,18 +1072,18 @@ public class TestMultiForkRemoveDuplicatesStep : ILinearStep<char[], char[]>
 /// </summary>
 public class TestMultiForkCharArrayHandlerStep : IHandlerStep<char[]>
 {
-    private readonly Func<char[], ValueTask> _handler;
+    private readonly Func<char[], CancellationToken, ValueTask> _handler;
 
-    public TestMultiForkCharArrayHandlerStep(Func<char[], ValueTask> handler)
+    public TestMultiForkCharArrayHandlerStep(Func<char[], CancellationToken, ValueTask> handler)
     {
         _handler = handler;
     }
 
     public string Name => "CharArrayHandler";
 
-    public async ValueTask Handle(char[] input)
+    public async ValueTask Handle(char[] input, CancellationToken ct = default)
     {
-        await _handler(input);
+        await _handler(input, ct);
     }
 }
 
@@ -1093,11 +1094,11 @@ public class TestMultiForkCountDigitsAndLettersStep : ILinearStep<char[], (int D
 {
     public string Name => "CountDigitsAndLetters";
 
-    public async ValueTask Handle(char[] input, Handler<(int DigitCount, int LetterCount)> next)
+    public async ValueTask Handle(char[] input, Handler<(int DigitCount, int LetterCount)> next, CancellationToken ct = default)
     {
         var digitCount = input.Count(char.IsDigit);
         var letterCount = input.Count(char.IsLetter);
-        await next((digitCount, letterCount));
+        await next((digitCount, letterCount), ct);
     }
 }
 
@@ -1108,11 +1109,11 @@ public class TestMultiForkCalculateRatioStep : ILinearStep<(int DigitCount, int 
 {
     public string Name => "CalculateRatio";
 
-    public async ValueTask Handle((int DigitCount, int LetterCount) input, Handler<int> next)
+    public async ValueTask Handle((int DigitCount, int LetterCount) input, Handler<int> next, CancellationToken ct = default)
     {
         // Calculate ratio of digits to letters (floor division)
         var ratio = input.LetterCount > 0 ? input.DigitCount / input.LetterCount : input.DigitCount;
-        await next(ratio);
+        await next(ratio, ct);
     }
 }
 
@@ -1121,17 +1122,17 @@ public class TestMultiForkCalculateRatioStep : ILinearStep<(int DigitCount, int 
 /// </summary>
 public class TestMultiForkDefaultIntHandlerStep : IHandlerStep<int>
 {
-    private readonly Func<int, ValueTask> _handler;
+    private readonly Func<int, CancellationToken, ValueTask> _handler;
 
-    public TestMultiForkDefaultIntHandlerStep(Func<int, ValueTask> handler)
+    public TestMultiForkDefaultIntHandlerStep(Func<int, CancellationToken, ValueTask> handler)
     {
         _handler = handler;
     }
 
     public string Name => "IntHandler";
 
-    public async ValueTask Handle(int input)
+    public async ValueTask Handle(int input, CancellationToken ct = default)
     {
-        await _handler(input);
+        await _handler(input, ct);
     }
 }
