@@ -90,7 +90,7 @@ public abstract class ReducedPipeStep<TEntryStepInput, TEntryStepResult, TNextIn
     /// <param name="trueBuilder">The builder for the true branch of the if step.</param>
     /// <returns>An if step that follows this reduced pipe step in the pipeline.</returns>
     public IfStep<TEntryStepInput, TEntryStepResult, TNextInput, TNextResult, TIfInput, TIfResult, TNextStepNextInput, TNextStepNextResult> ThenIf<TIfInput, TIfResult, TNextStepNextInput, TNextStepNextResult>(string name,
-        IfSelector<TNextInput, TIfInput, TNextStepNextInput, TNextResult, TIfResult, TNextStepNextResult> selector,
+        IfSelector<TNextInput, TNextResult, TIfInput, TIfResult, TNextStepNextInput, TNextStepNextResult> selector,
         Func<Space, OpenPipeline<TIfInput, TIfResult, TNextStepNextInput, TNextStepNextResult>> trueBuilder)
     {
         return new PipeIfStep<TEntryStepInput, TEntryStepResult, TNextInput, TNextResult, TIfInput, TIfResult, TNextStepNextInput, TNextStepNextResult>(this, name, selector, trueBuilder, Builder);

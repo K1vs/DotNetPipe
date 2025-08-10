@@ -15,7 +15,7 @@ namespace K1vs.DotNetPipe.Returning;
 /// <param name="ifNext">The handler to execute if decide in selector.</param>
 /// <param name="next">The handler to execute after the "if" handler is executed.</param>
 /// <returns>A value task representing the asynchronous operation.</returns>
-public delegate ValueTask<TResult> IfSelector<TInput, TIfInput, TNextInput, TResult, TIfResult, TNextResult>(TInput input,
+public delegate ValueTask<TResult> IfSelector<TInput, TResult, TIfInput, TIfResult, TNextInput, TNextResult>(TInput input,
     Handler<TIfInput, TIfResult> ifNext,
     Handler<TNextInput, TNextResult> next);
 

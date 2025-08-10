@@ -16,13 +16,13 @@ namespace K1vs.DotNetPipe.Returning.Steps.IfSteps;
 /// <typeparam name="TNextStepResult">The type of result for the next step after the if step.</typeparam>
 public abstract class IfStep<TEntryStepInput, TEntryStepResult, TInput, TResult, TIfInput, TIfResult, TNextStepInput, TNextStepResult> : ReducedPipeStep<TEntryStepInput, TEntryStepResult, TNextStepInput, TNextStepResult>
 {
-    private readonly IfSelector<TInput, TIfInput, TNextStepInput, TResult, TIfResult, TNextStepResult> _selector;
+    private readonly IfSelector<TInput, TResult, TIfInput, TIfResult, TNextStepInput, TNextStepResult> _selector;
 
     /// <summary>
     /// Mutators for the if selector.
     /// These allow for modifying the behavior of the selector dynamically.
     /// </summary>
-    public StepMutators<IfSelector<TInput, TIfInput, TNextStepInput, TResult, TIfResult, TNextStepResult>> Mutators { get; }
+    public StepMutators<IfSelector<TInput, TResult, TIfInput, TIfResult, TNextStepInput, TNextStepResult>> Mutators { get; }
 
     /// <summary>
     /// Gets the pipeline that is executed when the condition is true.
@@ -37,13 +37,13 @@ public abstract class IfStep<TEntryStepInput, TEntryStepResult, TInput, TResult,
     /// <param name="trueBuilder">A function that builds the pipeline for the true branch.</param>
     /// <param name="builder">The pipeline builder that manages the pipeline construction.</param>
     private protected IfStep(string name,
-        IfSelector<TInput, TIfInput, TNextStepInput, TResult, TIfResult, TNextStepResult> selector,
+        IfSelector<TInput, TResult, TIfInput, TIfResult, TNextStepInput, TNextStepResult> selector,
         Func<Space, OpenPipeline<TIfInput, TIfResult, TNextStepInput, TNextStepResult>> trueBuilder,
         PipelineBuilder builder)
         : base(name, builder)
     {
         _selector = selector;
-        Mutators = new StepMutators<IfSelector<TInput, TIfInput, TNextStepInput, TResult, TIfResult, TNextStepResult>>();
+        Mutators = new StepMutators<IfSelector<TInput, TResult, TIfInput, TIfResult, TNextStepInput, TNextStepResult>>();
         TruePipeline = trueBuilder(builder.Space);
     }
 
@@ -51,7 +51,7 @@ public abstract class IfStep<TEntryStepInput, TEntryStepResult, TInput, TResult,
     /// Builds selectors for the if step.
     /// </summary>
     /// <returns>A selector that processes the input and determines the next step based on the condition.</returns>
-    private protected IfSelector<TInput, TIfInput, TNextStepInput, TResult, TIfResult, TNextStepResult> CreateStepSelector()
+    private protected IfSelector<TInput, TResult, TIfInput, TIfResult, TNextStepInput, TNextStepResult> CreateStepSelector()
     {
         return Mutators.MutateDelegate(_selector);
     }

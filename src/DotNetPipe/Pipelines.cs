@@ -27,6 +27,21 @@ public static class Pipelines
     /// The pipeline is created within a new space, which is a container for pipelines and their steps.
     /// </summary>
     /// <typeparam name="TInput">The type of the input data for the pipeline.</typeparam>
+    /// <typeparam name="TResult">The type of the result data for the pipeline.</typeparam>
+    /// <param name="name">The name of the pipeline.</param>
+    /// <returns>A new pipeline entry.</returns>
+    public static Returning.PipelineEntry<TInput, TResult> CreateReturningPipeline<TInput, TResult>(string name)
+    {
+        var space = new Returning.Space();
+        var pipeline = space.CreatePipeline<TInput, TResult>(name);
+        return pipeline;
+    }
+
+    /// <summary>
+    /// Creates a new pipeline with the specified name.
+    /// The pipeline is created within a new space, which is a container for pipelines and their steps.
+    /// </summary>
+    /// <typeparam name="TInput">The type of the input data for the pipeline.</typeparam>
     /// <param name="name">The name of the pipeline.</param>
     /// <returns>A new pipeline entry.</returns>
     public static Cancellable.PipelineEntry<TInput> CreateCancellablePipeline<TInput>(string name)
@@ -87,6 +102,17 @@ public static class Pipelines
     public static Universal.Space CreateSpace()
     {
         return new Universal.Space();
+    }
+
+    /// <summary>
+    /// Creates a space for pipelines.
+    /// A space is a container for pipelines and their steps, allowing for organized management of multiple pipelines.
+    /// Each space can contain multiple pipelines, and each pipeline can have multiple steps.
+    /// </summary>
+    /// <returns>A new space instance.</returns>
+    public static Returning.Space CreateReturningSpace()
+    {
+        return new Returning.Space();
     }
 
     /// <summary>

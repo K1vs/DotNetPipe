@@ -29,7 +29,7 @@ public sealed class PipeIfStep<TEntryStepInput, TEntryStepResult, TInput, TResul
     /// <param name="builder">The pipeline builder that manages the pipeline construction.</param>
     internal PipeIfStep(ReducedPipeStep<TEntryStepInput, TEntryStepResult, TInput, TResult> previousStep,
         string name,
-        IfSelector<TInput, TIfInput, TNextStepInput, TResult, TIfResult, TNextStepResult> selector,
+        IfSelector<TInput, TResult, TIfInput, TIfResult, TNextStepInput, TNextStepResult> selector,
         Func<Space, OpenPipeline<TIfInput, TIfResult, TNextStepInput, TNextStepResult>> trueBuilder,
         PipelineBuilder builder)
         : base(name, selector, trueBuilder, builder)

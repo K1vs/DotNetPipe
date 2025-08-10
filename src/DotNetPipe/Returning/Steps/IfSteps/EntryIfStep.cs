@@ -21,7 +21,7 @@ public sealed class EntryIfStep<TEntryStepInput, TResult, TIfInput, TIfResult, T
     /// <param name="selector">The selector that determines which pipeline to execute when the condition is true.</param>
     /// <param name="trueBuilder">A function that builds the pipeline for the true branch.</param>
     /// <param name="builder">The pipeline builder that manages the pipeline construction.</param>
-    internal EntryIfStep(string name, IfSelector<TEntryStepInput, TIfInput, TNextStepInput, TResult, TIfResult, TNextStepResult> selector,
+    internal EntryIfStep(string name, IfSelector<TEntryStepInput, TResult, TIfInput, TIfResult, TNextStepInput, TNextStepResult> selector,
         Func<Space, OpenPipeline<TIfInput, TIfResult, TNextStepInput, TNextStepResult>> trueBuilder,
         PipelineBuilder builder)
         : base(name, selector, trueBuilder, builder)

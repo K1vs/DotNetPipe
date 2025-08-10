@@ -76,7 +76,7 @@ public class PipelineEntry<TPipelineInput, TPipelineResult>
     /// <param name="trueBuilder">The builder for the true sub-pipeline.</param>
     /// <returns>An instance of <see cref="EntryIfStep{TPipelineInput, TPipelineResult, TIfInput, TIfResult, TNextInput, TNextResult}"/> representing the if step.</returns>
     public EntryIfStep<TPipelineInput, TPipelineResult, TIfInput, TIfResult, TNextInput, TNextResult> StartWithIf<TIfInput, TIfResult, TNextInput, TNextResult>(string name,
-        IfSelector<TPipelineInput, TIfInput, TNextInput, TPipelineResult, TIfResult, TNextResult> selector,
+        IfSelector<TPipelineInput, TPipelineResult, TIfInput, TIfResult, TNextInput, TNextResult> selector,
         Func<Space, OpenPipeline<TIfInput, TIfResult, TNextInput, TNextResult>> trueBuilder)
     {
         var step = new EntryIfStep<TPipelineInput, TPipelineResult, TIfInput, TIfResult, TNextInput, TNextResult>(name, selector, trueBuilder, Builder);
