@@ -53,6 +53,36 @@ public static class Pipelines
     }
 
     /// <summary>
+    /// Creates a new returning async pipeline with the specified name.
+    /// The pipeline is created within a new space, which is a container for pipelines and their steps.
+    /// </summary>
+    /// <typeparam name="TInput">The type of the input data for the pipeline.</typeparam>
+    /// <typeparam name="TResult">The type of the result data for the pipeline.</typeparam>
+    /// <param name="name">The name of the pipeline.</param>
+    /// <returns>A new returning async pipeline entry.</returns>
+    public static ReturningAsync.PipelineEntry<TInput, TResult> CreateReturningAsyncPipeline<TInput, TResult>(string name)
+    {
+        var space = new ReturningAsync.Space();
+        var pipeline = space.CreatePipeline<TInput, TResult>(name);
+        return pipeline;
+    }
+
+    /// <summary>
+    /// Creates a new returning async cancellable pipeline with the specified name.
+    /// The pipeline is created within a new space, which is a container for pipelines and their steps.
+    /// </summary>
+    /// <typeparam name="TInput">The type of the input data for the pipeline.</typeparam>
+    /// <typeparam name="TResult">The type of the result data for the pipeline.</typeparam>
+    /// <param name="name">The name of the pipeline.</param>
+    /// <returns>A new returning async cancellable pipeline entry.</returns>
+    public static ReturningAsyncCancellable.PipelineEntry<TInput, TResult> CreateReturningAsyncCancellablePipeline<TInput, TResult>(string name)
+    {
+        var space = new ReturningAsyncCancellable.Space();
+        var pipeline = space.CreatePipeline<TInput, TResult>(name);
+        return pipeline;
+    }
+
+    /// <summary>
     /// Creates a new pipeline with the specified name.
     /// The pipeline is created within a new space, which is a container for pipelines and their steps.
     /// </summary>
@@ -139,6 +169,28 @@ public static class Pipelines
     public static ReturningCancellable.Space CreateReturningCancellableSpace()
     {
         return new ReturningCancellable.Space();
+    }
+
+    /// <summary>
+    /// Creates a space for returning async pipelines.
+    /// A space is a container for pipelines and their steps, allowing for organized management of multiple pipelines.
+    /// Each space can contain multiple pipelines, and each pipeline can have multiple steps.
+    /// </summary>
+    /// <returns>A new returning async space instance.</returns>
+    public static ReturningAsync.Space CreateReturningAsyncSpace()
+    {
+        return new ReturningAsync.Space();
+    }
+
+    /// <summary>
+    /// Creates a space for returning async cancellable pipelines.
+    /// A space is a container for pipelines and their steps, allowing for organized management of multiple pipelines.
+    /// Each space can contain multiple pipelines, and each pipeline can have multiple steps.
+    /// </summary>
+    /// <returns>A new returning async cancellable space instance.</returns>
+    public static ReturningAsyncCancellable.Space CreateReturningAsyncCancellableSpace()
+    {
+        return new ReturningAsyncCancellable.Space();
     }
 
     /// <summary>
