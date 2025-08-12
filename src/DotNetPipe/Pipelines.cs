@@ -38,6 +38,21 @@ public static class Pipelines
     }
 
     /// <summary>
+    /// Creates a new returning cancellable pipeline with the specified name.
+    /// The pipeline is created within a new space, which is a container for pipelines and their steps.
+    /// </summary>
+    /// <typeparam name="TInput">The type of the input data for the pipeline.</typeparam>
+    /// <typeparam name="TResult">The type of the result data for the pipeline.</typeparam>
+    /// <param name="name">The name of the pipeline.</param>
+    /// <returns>A new returning cancellable pipeline entry.</returns>
+    public static ReturningCancellable.PipelineEntry<TInput, TResult> CreateReturningCancellablePipeline<TInput, TResult>(string name)
+    {
+        var space = new ReturningCancellable.Space();
+        var pipeline = space.CreatePipeline<TInput, TResult>(name);
+        return pipeline;
+    }
+
+    /// <summary>
     /// Creates a new pipeline with the specified name.
     /// The pipeline is created within a new space, which is a container for pipelines and their steps.
     /// </summary>
@@ -113,6 +128,17 @@ public static class Pipelines
     public static Returning.Space CreateReturningSpace()
     {
         return new Returning.Space();
+    }
+
+    /// <summary>
+    /// Creates a space for returning cancellable pipelines.
+    /// A space is a container for pipelines and their steps, allowing for organized management of multiple pipelines.
+    /// Each space can contain multiple pipelines, and each pipeline can have multiple steps.
+    /// </summary>
+    /// <returns>A new returning cancellable space instance.</returns>
+    public static ReturningCancellable.Space CreateReturningCancellableSpace()
+    {
+        return new ReturningCancellable.Space();
     }
 
     /// <summary>

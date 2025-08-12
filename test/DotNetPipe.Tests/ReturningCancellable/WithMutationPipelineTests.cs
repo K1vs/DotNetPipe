@@ -11,8 +11,7 @@ public class WithMutationPipelineTests
     [InlineData(2, 3)]
     public async Task BuildAndRunPipeline_WhenOneHandlerStep_ShouldReturnMutatedResult(int value, int expectedValue)
     {
-        var pipeline = new Space()
-            .CreatePipeline<int, int>("TestPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestPipeline")
             .StartWithHandler("TestHandler", async (input, ct) => await Task.FromResult(input))
             .BuildPipeline()
             .Compile(cfg => { cfg.Configure(ConfigureTestPipelineMutators); });
@@ -34,8 +33,7 @@ public class WithMutationPipelineTests
     [InlineData(2, 3, 8)]
     public async Task BuildAndRunPipeline_WhenLinearStepThenHandlerStep_ShouldReturnMutatedResult(int inputValue, int constantToAdd, int expectedResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<int, int>("TestTwoStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestTwoStepPipeline")
             .StartWithLinear<int, int>("AddConstant", async (input, next, ct) =>
             {
                 var result = input + constantToAdd;
@@ -67,8 +65,7 @@ public class WithMutationPipelineTests
     [InlineData(10, -5, 4, 61)]
     public async Task BuildAndRunPipeline_WhenTwoLinearStepsThenHandlerStep_ShouldReturnMutatedResult(int inputValue, int constantToAdd, int multiplier, int expectedResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<int, int>("TestThreeStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestThreeStepPipeline")
             .StartWithLinear<int, int>("AddConstant", async (input, next, ct) =>
             {
                 var result = input + constantToAdd;
@@ -110,8 +107,7 @@ public class WithMutationPipelineTests
     [InlineData("5.5", 2, 8)]
     public async Task BuildAndRunPipeline_WhenIfStepHandlesIntAndFloat_ShouldReturnMutatedResult(string inputValue, int constantToAdd, int expectedResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<string, int>("TestIfStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<string, int>("TestIfStepPipeline")
             .StartWithLinear<string, int>("TrimString", async (input, next, ct) =>
             {
                 var trimmed = input.Trim();
@@ -179,8 +175,7 @@ public class WithMutationPipelineTests
     [InlineData("5.5", 2, 7, 17)]
     public async Task BuildAndRunPipeline_WhenIfElseStepHandlesIntFloat_ShouldReturnMutatedResult(string inputValue, int constantToAdd, int multiplier, int expectedResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<string, int>("TestIfElseStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<string, int>("TestIfElseStepPipeline")
             .StartWithLinear<string, int>("TrimString", async (input, next, ct) =>
             {
                 var trimmed = input.Trim();
@@ -272,7 +267,7 @@ public class WithMutationPipelineTests
     [InlineData("", 3)]
     public async Task BuildAndRunPipeline_WhenSwitchStepRoutesByNumberRange_ShouldReturnMutatedResult(string inputValue, int expectedResult)
     {
-        var space = new Space();
+        var space = Pipelines.CreateReturningCancellableSpace();
         var defaultPipeline = space.CreatePipeline<int, int>("StringLengthPipeline")
             .StartWithLinear<int, int>("IdentityOperation", async (input, next, ct) => await next(input, ct))
             .BuildOpenPipeline();
@@ -375,8 +370,7 @@ public class WithMutationPipelineTests
     [InlineData("!@#", null, "***!@#***")]
     public async Task BuildAndRunPipeline_WhenForkSplitsByDigitContent_ShouldReturnMutatedResult(string inputValue, int? expectedIntResult, string? expectedStringResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<string, (int?, string?)>("TestForkPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<string, (int?, string?)>("TestForkPipeline")
             .StartWithLinear<string, (int?, string?)>("TrimString", async (input, next, ct) =>
             {
                 var trimmed = input.Trim();
@@ -517,7 +511,7 @@ public class WithMutationPipelineTests
         string? expectedStringResult,
         char[] expectedCharArrayResult)
     {
-        var space = new Space();
+        var space = Pipelines.CreateReturningCancellableSpace();
 
         space.CreatePipeline<string, (int?, string?, char[]?)>("DigitProcessingPipeline")
             .StartWithLinear<int?, (int?, string?, char[]?)>("ParseStringToInt", async (input, next, ct) => await next(int.TryParse(input, out var n) ? n : 0, ct))

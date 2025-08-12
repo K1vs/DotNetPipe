@@ -377,8 +377,7 @@ public class TestReturningCancellableClassPipeline
     public TestReturningCancellableClassPipeline(IEnumerable<IMutator<Space>> mutators)
     {
         var handler = new TestReturningCancellableClassHandlerStep();
-        var pipeline = new Space()
-            .CreatePipeline<int, int>("TestPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestPipeline")
             .StartWithHandler(handler)
             .BuildPipeline();
         _compiled = pipeline.Compile(cfg => cfg.Configure(mutators));
@@ -393,8 +392,7 @@ public class TestReturningCancellableClassTwoStepPipeline
     {
         var linear = new TestReturningCancellableClassLinearStep();
         var handler = new TestReturningCancellableClassHandlerStep();
-        var pipeline = new Space()
-            .CreatePipeline<int, int>("TestTwoStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestTwoStepPipeline")
             .StartWithLinear(linear)
             .HandleWith(handler)
             .BuildPipeline();
@@ -411,8 +409,7 @@ public class TestReturningCancellableClassThreeStepPipeline
         var first = new TestReturningCancellableClassLinearStep();
         var second = new TestReturningCancellableClassSecondLinearStep();
         var handler = new TestReturningCancellableClassHandlerStep();
-        var pipeline = new Space()
-            .CreatePipeline<int, int>("TestThreeStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestThreeStepPipeline")
             .StartWithLinear(first)
             .ThenLinear(second)
             .HandleWith(handler)
@@ -431,8 +428,7 @@ public class TestReturningCancellableClassIfStepPipeline
         var ifStep = new TestReturningCancellableClassIfStep();
         var add = new TestReturningCancellableClassIfAddConstantStep();
         var handler = new TestReturningCancellableClassIfHandlerStep();
-        var pipeline = new Space()
-            .CreatePipeline<string, int>("TestIfStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<string, int>("TestIfStepPipeline")
             .StartWithLinear(trim)
             .ThenIf(ifStep)
             .ThenLinear(add)
@@ -452,8 +448,7 @@ public class TestReturningCancellableClassIfElseStepPipeline
         var ifElse = new TestReturningCancellableClassIfElseStep();
         var add = new TestReturningCancellableClassIfElseAddConstantStep();
         var handler = new TestReturningCancellableClassIfElseHandlerStep();
-        var pipeline = new Space()
-            .CreatePipeline<string, int>("TestIfElseStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<string, int>("TestIfElseStepPipeline")
             .StartWithLinear(trim)
             .ThenIfElse(ifElse)
             .ThenLinear(add)
@@ -472,7 +467,7 @@ public class TestReturningCancellableClassSwitchStepPipeline
         var trim = new TestReturningCancellableClassTrimStep();
         var switchStep = new TestReturningCancellableClassNumberRangeSwitchStep();
         var handler = new TestReturningCancellableClassIfHandlerStep();
-        var space = new Space();
+        var space = Pipelines.CreateReturningCancellableSpace();
         var pipeline = space.CreatePipeline<string, int>("TestSwitchPipeline")
             .StartWithLinear(trim)
             .ThenSwitch(switchStep)
@@ -822,7 +817,7 @@ public class TestReturningCancellableClassForkStepPipeline
     public TestReturningCancellableClassForkStepPipeline(IEnumerable<IMutator<Space>> mutators)
     {
         var fork = new TestReturningCancellableClassDigitContentForkStep();
-        var space = new Space();
+        var space = Pipelines.CreateReturningCancellableSpace();
         var pipeline = space.CreatePipeline<string, (int?, string?)>("TestForkPipeline")
             .StartWithLinear<string, (int?, string?)>("TrimString", async (input, next, ct) => await next(input.Trim(), ct))
             .ThenFork(fork)
@@ -953,7 +948,7 @@ public class TestReturningCancellableClassMultiForkStepPipeline
     private readonly Handler<string, (int?, string?, char[]?)> _compiled;
     public TestReturningCancellableClassMultiForkStepPipeline(IEnumerable<IMutator<Space>> mutators)
     {
-        var space = new Space();
+        var space = Pipelines.CreateReturningCancellableSpace();
 
         space.CreatePipeline<string, (int?, string?, char[]?)>("DigitProcessingPipeline")
             .StartWithLinear<int?, (int?, string?, char[]?)>("ParseStringToInt", async (input, next, ct) => await next(int.TryParse(input, out var n) ? n : 0, ct))

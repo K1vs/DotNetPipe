@@ -8,8 +8,7 @@ public class TestReturningCancellablePipeline
 
     public TestReturningCancellablePipeline(Handler<int, int> handler)
     {
-        var space = new Space();
-        _pipeline = space.CreatePipeline<int, int>("TestPipeline")
+        _pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestPipeline")
             .StartWithHandler("TestHandler", handler)
             .BuildPipeline();
     }
@@ -28,7 +27,7 @@ public class TestReturningCancellableTwoStepPipeline
 
     public TestReturningCancellableTwoStepPipeline(Handler<int, int> handler)
     {
-        _space = new Space();
+        _space = Pipelines.CreateReturningCancellableSpace();
         _handler = handler;
     }
 
@@ -53,7 +52,7 @@ public class TestReturningCancellableThreeStepPipeline
 
     public TestReturningCancellableThreeStepPipeline(Handler<int, int> handler)
     {
-        _space = new Space();
+        _space = Pipelines.CreateReturningCancellableSpace();
         _handler = handler;
     }
 
@@ -82,10 +81,9 @@ public class TestReturningCancellableIfStepPipeline
 
     public TestReturningCancellableIfStepPipeline()
     {
-        var space = new Space();
         _pipeline = (input, constantToAdd, ct) =>
         {
-            var pipeline = space.CreatePipeline<string, int>("TestIfStepPipeline")
+            var pipeline = Pipelines.CreateReturningCancellablePipeline<string, int>("TestIfStepPipeline")
                 .StartWithLinear<string, int>("TrimString", async (val, next, ct2) =>
                 {
                     var trimmed = val.Trim();
@@ -139,10 +137,9 @@ public class TestReturningCancellableIfElseStepPipeline
 
     public TestReturningCancellableIfElseStepPipeline()
     {
-        var space = new Space();
         _pipeline = (input, constantToAdd, multiplier, ct) =>
         {
-            var pipeline = space.CreatePipeline<string, int>("TestIfElseStepPipeline")
+            var pipeline = Pipelines.CreateReturningCancellablePipeline<string, int>("TestIfElseStepPipeline")
                 .StartWithLinear<string, int>("TrimString", async (val, next, ct2) =>
                 {
                     var trimmed = val.Trim();
@@ -203,7 +200,7 @@ public class TestReturningCancellableSwitchStepPipeline
 
     public TestReturningCancellableSwitchStepPipeline()
     {
-        var space = new Space();
+        var space = Pipelines.CreateReturningCancellableSpace();
         var defaultPipeline = space.CreatePipeline<int, int>("StringLengthPipeline")
             .StartWithLinear<int, int>("IdentityOperation", async (input, next, ct) =>
             {
@@ -262,8 +259,7 @@ public class TestReturningCancellableForkStepPipeline
 
     public TestReturningCancellableForkStepPipeline()
     {
-        var space = new Space();
-        var compiled = space.CreatePipeline<string, (int?, string?)>("TestForkPipeline")
+        var compiled = Pipelines.CreateReturningCancellablePipeline<string, (int?, string?)>("TestForkPipeline")
             .StartWithLinear<string, (int?, string?)>("TrimString", async (input, next, ct) =>
             {
                 var trimmed = input.Trim();
@@ -314,7 +310,7 @@ public class TestReturningCancellableMultiForkStepPipeline
 
     public TestReturningCancellableMultiForkStepPipeline()
     {
-        var space = new Space();
+        var space = Pipelines.CreateReturningCancellableSpace();
 
         space.CreatePipeline<string, (int?, string?, char[]?)>("DigitProcessingPipeline")
             .StartWithLinear<int?, (int?, string?, char[]?)>("ParseStringToInt", async (input, next, ct) => await next(int.TryParse(input, out var number) ? number : 0, ct))

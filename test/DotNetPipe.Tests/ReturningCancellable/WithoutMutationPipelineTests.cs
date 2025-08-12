@@ -10,8 +10,7 @@ public class WithoutMutationPipelineTests
     [InlineData(2, -4)]
     public async Task BuildAndRunPipeline_WhenOneFuncStep_ShouldReturnResult(int value, int expectedResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<int, int>("TestPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestPipeline")
             .StartWithHandler("TestHandler", async (input, ct) =>
             {
                 var result = input * -2;
@@ -29,8 +28,7 @@ public class WithoutMutationPipelineTests
     [InlineData(2, 3, 10)]
     public async Task BuildAndRunPipeline_WhenLinearStepThenFuncStep_ShouldReturnResult(int inputValue, int constantToAdd, int expectedResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<int, int>("TestTwoStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestTwoStepPipeline")
             .StartWithLinear<int, int>("AddConstant", async (input, next, ct) =>
             {
                 var result = input + constantToAdd;
@@ -54,8 +52,7 @@ public class WithoutMutationPipelineTests
     [InlineData(10, -5, 4, 20)]
     public async Task BuildAndRunPipeline_WhenTwoLinearStepsThenFuncStep_ShouldReturnResult(int inputValue, int constantToAdd, int multiplier, int expectedResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<int, int>("TestThreeStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<int, int>("TestThreeStepPipeline")
             .StartWithLinear<int, int>("AddConstant", async (input, next, ct) =>
             {
                 var result = input + constantToAdd;
@@ -81,8 +78,7 @@ public class WithoutMutationPipelineTests
     [InlineData("5.5", 2, 8)]
     public async Task BuildAndRunPipeline_WhenIfStepHandlesIntAndFloat_ShouldProcessCorrectly(string inputValue, int constantToAdd, int expectedResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<string, int>("TestIfStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<string, int>("TestIfStepPipeline")
             .StartWithLinear<string, int>("TrimString", async (input, next, ct) =>
             {
                 var trimmed = input.Trim();
@@ -133,8 +129,7 @@ public class WithoutMutationPipelineTests
     [InlineData("5.5", 2, 7, 8)]
     public async Task BuildAndRunPipeline_WhenIfElseStepHandlesIntFloatOrDefault_ShouldProcessCorrectly(string inputValue, int constantToAdd, int multiplier, int expectedResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<string, int>("TestIfElseStepPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<string, int>("TestIfElseStepPipeline")
             .StartWithLinear<string, int>("TrimString", async (input, next, ct) =>
             {
                 var trimmed = input.Trim();
@@ -194,7 +189,7 @@ public class WithoutMutationPipelineTests
     [InlineData("", 0)]
     public async Task BuildAndRunPipeline_WhenSwitchStepRoutesByNumberRange_ShouldProcessCorrectly(string inputValue, int expectedResult)
     {
-        var space = new Space();
+        var space = Pipelines.CreateReturningCancellableSpace();
         var defaultPipeline = space.CreatePipeline<int, int>("StringLengthPipeline")
             .StartWithLinear<int, int>("IdentityOperation", async (input, next, ct) =>
             {
@@ -282,8 +277,7 @@ public class WithoutMutationPipelineTests
     [InlineData("!@#", null, "  !@#  ")]
     public async Task BuildAndRunPipeline_WhenForkSplitsByDigitContent_ShouldProcessCorrectly(string inputValue, int? expectedIntResult, string? expectedStringResult)
     {
-        var pipeline = new Space()
-            .CreatePipeline<string, (int?, string?)>("TestForkPipeline")
+        var pipeline = Pipelines.CreateReturningCancellablePipeline<string, (int?, string?)>("TestForkPipeline")
             .StartWithLinear<string, (int?, string?)>("TrimString", async (input, next, ct) =>
             {
                 var trimmed = input.Trim();
@@ -346,7 +340,7 @@ public class WithoutMutationPipelineTests
         string? expectedStringResult,
         char[]? expectedCharArrayResult)
     {
-        var space = new Space();
+        var space = Pipelines.CreateReturningCancellableSpace();
 
         space.CreatePipeline<string, (int?, string?, char[]?)>("DigitProcessingPipeline")
             .StartWithLinear<int?, (int?, string?, char[]?)>("ParseStringToInt", async (input, next, ct) =>
