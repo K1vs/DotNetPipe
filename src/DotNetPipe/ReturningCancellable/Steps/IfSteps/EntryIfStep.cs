@@ -1,5 +1,3 @@
-using System.Threading;
-
 namespace K1vs.DotNetPipe.ReturningCancellable.Steps.IfSteps;
 
 /// <summary>
