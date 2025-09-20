@@ -42,6 +42,15 @@ jobs:
             --no-build \
             -o out
 
+      - name: Upload packages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: |
+            out/*.nupkg
+            out/*.snupkg
+          retention-days: 14
+
       - name: Publish to NuGet.org
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
