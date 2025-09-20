@@ -64,6 +64,24 @@ jobs:
               print('PackageReleaseNotes is missing or empty in csproj', file=sys.stderr)
               sys.exit(1)
 
+          print('::group::Detected package metadata')
+          print(f'Version: {version}')
+          print('PackageReleaseNotes:')
+          print('----- BEGIN RELEASE NOTES -----')
+          print(release_notes)
+          print('----- END RELEASE NOTES -----')
+          print('::endgroup::')
+
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+          if summary_path:
+              with open(summary_path, 'a', encoding='utf-8') as s:
+                  s.write('### Package metadata\n\n')
+                  s.write(f'- **Version**: `{version}`\n')
+                  s.write('\n**Release notes:**\n')
+                  s.write('```\n')
+                  s.write(release_notes)
+                  s.write('\n```\n')
+
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
               f.write(f'version={version}\n')
               f.write('release_notes<<EOF\n')
