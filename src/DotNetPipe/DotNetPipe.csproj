@@ -4,8 +4,31 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>K1vs.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <DebugType>Embedded</DebugType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Title>DotNetPipe</Title>
+    <Description>A fluent-style pipeline builder with minimal overhead and a mutation API that lets you modify pipeline behavior without touching the original code.</Description>
+    <Version>0.1.0</Version>
+    <Authors>K1vs</Authors>
+    <Copyright>Copyright (c) 2025 K1vs</Copyright>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/K1vs/DotNetPipe</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageId>DotNetPipe</PackageId>
+    <PackageTags>pipeline;builder;mutator;fluent;dotnet</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/K1vs/DotNetPipe</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>   
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
 </Project>

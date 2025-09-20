@@ -1,0 +1,58 @@
+name: Publish NuGet Package
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: publish-nuget-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-pack-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      DOTNET_NOLOGO: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore DotNetPipe.sln
+
+      - name: Build (Release)
+        run: dotnet build DotNetPipe.sln -c Release -p:ContinuousIntegrationBuild=true --no-restore
+
+      - name: Test
+        run: dotnet test DotNetPipe.sln -c Release --no-build
+
+      - name: Pack library
+        run: |
+          dotnet pack src/DotNetPipe/DotNetPipe.csproj \
+            -c Release \
+            --no-build \
+            -o out
+
+      - name: Publish to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "${NUGET_API_KEY}" ]; then
+            echo "NUGET_API_KEY secret is missing" >&2
+            exit 1
+          fi
+          dotnet nuget push "out/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+
