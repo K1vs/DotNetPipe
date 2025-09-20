@@ -19,7 +19,7 @@
     <RepositoryUrl>https://github.com/K1vs/DotNetPipe</RepositoryUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EnablePackageValidation>true</EnablePackageValidation>
-    <PackageId>DotNetPipe</PackageId>
+    <PackageId>K1vs.DotNetPipe</PackageId>
     <PackageTags>pipeline;builder;mutator;fluent;dotnet</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/K1vs/DotNetPipe</PackageProjectUrl>
