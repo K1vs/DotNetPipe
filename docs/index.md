@@ -2,10 +2,16 @@
 _layout: landing
 ---
 
-# This is the **HOMEPAGE**.
+# DotNetPipe
 
-Refer to [Markdown](http://daringfireball.net/projects/markdown/) for how to write markdown files.
+DotNetPipe is a fluent-style pipeline builder with minimal overhead and a mutation API that lets you modify pipeline behavior without touching the original code.
 
-## Quick Start Notes:
+- Minimal allocations at runtime; overhead close to virtual method calls
+- Fluent API for linear and conditional steps
+- Mutation API to alter steps post-factum (per step, by name and type)
+- Multiple pipeline kinds: Universal (ValueTask), Async (Task), Sync; each has cancellable and returning variants
 
-1. Add images to the *images* folder if the file is referencing an image.
+Use the links below to dive in:
+
+- [Getting Started](articles/getting-started.md)
+- [Introduction](articles/introduction.md)
