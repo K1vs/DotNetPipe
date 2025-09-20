@@ -120,6 +120,7 @@ jobs:
           retention-days: 14
 
       - name: Create and push git tag
+        if: ${{ !inputs.dryrun }}
         env:
           TAG: v${{ steps.get_version.outputs.version }}
         run: |
@@ -133,11 +134,6 @@ jobs:
             git push origin "$TAG"
           fi
 
-      - name: Create source archive
-        run: |
-          mkdir -p out
-          git archive --format=zip -o "out/source-v${{ steps.get_version.outputs.version }}.zip" "v${{ steps.get_version.outputs.version }}"
-
       - name: Create GitHub Release
         if: ${{ !inputs.dryrun }}
         uses: softprops/action-gh-release@v2
@@ -148,7 +144,6 @@ jobs:
           files: |
             out/*.nupkg
             out/*.snupkg
-            out/*.zip
           draft: false
           prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
 

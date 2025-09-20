@@ -12,7 +12,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Title>DotNetPipe</Title>
     <Description>A fluent-style pipeline builder with minimal overhead and a mutation API that lets you modify pipeline behavior without touching the original code.</Description>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>K1vs</Authors>
     <Copyright>Copyright (c) 2025 K1vs</Copyright>
     <RepositoryType>git</RepositoryType>
@@ -25,7 +25,7 @@
     <PackageProjectUrl>https://github.com/K1vs/DotNetPipe</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>   
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+    <PackageReleaseNotes>Initial release - tested patch release workflow</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,3 +2,6 @@
   href: articles/
 - name: API
   href: api/
+- name: GitHub
+  href: https://github.com/K1vs/DotNetPipe
+  external: true

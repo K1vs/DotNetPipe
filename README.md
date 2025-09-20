@@ -1,5 +1,6 @@
 ### DotNetPipe
-A fluent-style pipeline builder with minimal overhead and a mutation API that lets you modify pipeline behavior without touching the original code.
+A fluent-style pipeline builder with minimal overhead and a mutation API that lets you modify pipeline behavior without touching the original code. 
+For full documentation, see the [DotNetPipe documentation site](https://k1vs.github.io/DotNetPipe).
 
 ### What it is for
 Primarily aimed at library/framework authors who need to declare pipelines while allowing end users to adjust behavior. The author defines steps (linear and conditional) via a fluent API; clients can tweak the pipeline as needed. Invoking pipelines causes no extra allocations; the overhead is close to virtual method calls.
