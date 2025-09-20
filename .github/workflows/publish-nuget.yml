@@ -1,7 +1,13 @@
-name: Publish NuGet Package
+name: Release and Publish NuGet Package
 
 on:
   workflow_dispatch:
+    inputs:
+      dryrun:
+        description: 'Dry run (skip release and publish steps)'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: publish-nuget-${{ github.ref }}
@@ -11,15 +17,59 @@ jobs:
   build-pack-publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     env:
       DOTNET_NOLOGO: true
+      PROJECT_PATH: src/DotNetPipe/DotNetPipe.csproj
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Read version and release notes from csproj
+        id: get_version
+        run: |
+          python3 - << 'PY'
+          import xml.etree.ElementTree as ET
+          import os
+          import sys
+
+          path = os.environ.get('PROJECT_PATH', 'src/DotNetPipe/DotNetPipe.csproj')
+          try:
+              tree = ET.parse(path)
+          except Exception as e:
+              print(f'Failed to parse {path}: {e}', file=sys.stderr)
+              sys.exit(1)
+
+          root = tree.getroot()
+
+          def local_name(tag: str) -> str:
+              return tag.split('}', 1)[-1] if '}' in tag else tag
+
+          def find_text(tag_name: str, strip_value: bool = True) -> str:
+              for elem in root.iter():
+                  if local_name(elem.tag) == tag_name and elem.text is not None:
+                      return elem.text.strip() if strip_value else elem.text
+              return ''
+
+          version = find_text('Version')
+          if not version:
+              print('Version not found in csproj', file=sys.stderr)
+              sys.exit(1)
+
+          release_notes = find_text('PackageReleaseNotes', strip_value=False)
+          if not (release_notes or '').strip():
+              print('PackageReleaseNotes is missing or empty in csproj', file=sys.stderr)
+              sys.exit(1)
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write(f'version={version}\n')
+              f.write('release_notes<<EOF\n')
+              f.write((release_notes or '') + '\n')
+              f.write('EOF\n')
+          PY
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -37,7 +87,7 @@ jobs:
 
       - name: Pack library
         run: |
-          dotnet pack src/DotNetPipe/DotNetPipe.csproj \
+          dotnet pack "$PROJECT_PATH" \
             -c Release \
             --no-build \
             -o out
@@ -51,7 +101,56 @@ jobs:
             out/*.snupkg
           retention-days: 14
 
+      - name: Create and push git tag
+        env:
+          TAG: v${{ steps.get_version.outputs.version }}
+        run: |
+          git fetch --tags --force
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping."
+          else
+            git config user.name "${GITHUB_ACTOR}"
+            git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
+      - name: Create source archive
+        run: |
+          mkdir -p out
+          git archive --format=zip -o "out/source-v${{ steps.get_version.outputs.version }}.zip" "v${{ steps.get_version.outputs.version }}"
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dryrun }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: v${{ steps.get_version.outputs.version }}
+          body: ${{ steps.get_version.outputs.release_notes }}
+          files: |
+            out/*.nupkg
+            out/*.snupkg
+            out/*.zip
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
+
+      - name: Publish to GitHub Packages
+        if: ${{ !inputs.dryrun }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          dotnet nuget add source "https://nuget.pkg.github.com/K1vs/index.json" \
+            --name github \
+            --username "$GITHUB_ACTOR" \
+            --password "$GITHUB_TOKEN" \
+            --store-password-in-clear-text
+          dotnet nuget push "out/*.nupkg" \
+            --api-key "$GITHUB_TOKEN" \
+            --source github \
+            --skip-duplicate
+
       - name: Publish to NuGet.org
+        if: ${{ !inputs.dryrun }}
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
@@ -63,5 +162,3 @@ jobs:
             --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
-
-
